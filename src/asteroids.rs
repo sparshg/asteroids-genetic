@@ -7,8 +7,8 @@ pub enum AsteroidSize {
 }
 pub struct Asteroid {
     pub pos: Vec2,
-    vel: Vec2,
-    size: AsteroidSize,
+    pub vel: Vec2,
+    pub size: AsteroidSize,
     sides: u8,
     radius: f32,
     rot: f32,
@@ -20,8 +20,8 @@ impl Asteroid {
     pub fn new(size: AsteroidSize) -> Self {
         let (sides, radius) = match size {
             AsteroidSize::Large => (gen_range(6, 10), gen_range(40., 50.)),
-            AsteroidSize::Medium => (gen_range(5, 6), gen_range(20., 30.)),
-            AsteroidSize::Small => (gen_range(3, 5), gen_range(12., 18.)),
+            AsteroidSize::Medium => (gen_range(5, 6), gen_range(30., 40.)),
+            AsteroidSize::Small => (gen_range(3, 5), 20.),
         };
         let mut r = vec2(
             if gen_range(0., 1.) > 0.5 { -1. } else { 1. },
@@ -48,6 +48,13 @@ impl Asteroid {
             rot: 0.,
             alive: true,
         }
+    }
+
+    pub fn new_from(pos: Vec2, vel: Vec2, size: AsteroidSize) -> Self {
+        let mut asteroid = Asteroid::new(size);
+        asteroid.pos = pos;
+        asteroid.vel = vel;
+        asteroid
     }
 
     pub fn check_collision(&mut self, pos: Vec2) -> bool {

@@ -20,15 +20,45 @@ impl World {
 
     pub fn update(&mut self) {
         self.player.update();
-        // println!("{}", self.asteroids.len());
+        let mut to_add: Vec<Asteroid> = Vec::new();
         for asteroid in &mut self.asteroids {
             asteroid.update();
-            self.player.check_bullet_collisions(asteroid);
+            if self.player.check_bullet_collisions(asteroid) {
+                match asteroid.size {
+                    AsteroidSize::Large => {
+                        let rand = vec2(gen_range(-50., 50.), gen_range(-50., 50.));
+                        to_add.push(Asteroid::new_from(
+                            asteroid.pos,
+                            asteroid.vel + rand,
+                            AsteroidSize::Medium,
+                        ));
+                        to_add.push(Asteroid::new_from(
+                            asteroid.pos,
+                            asteroid.vel - rand,
+                            AsteroidSize::Medium,
+                        ));
+                    }
+                    AsteroidSize::Medium => {
+                        let rand = vec2(gen_range(-30., 30.), gen_range(-30., 30.));
+                        to_add.push(Asteroid::new_from(
+                            asteroid.pos,
+                            asteroid.vel + rand,
+                            AsteroidSize::Small,
+                        ));
+                        to_add.push(Asteroid::new_from(
+                            asteroid.pos,
+                            asteroid.vel - rand,
+                            AsteroidSize::Small,
+                        ));
+                    }
+                    _ => {}
+                }
+            }
         }
+        self.asteroids.append(&mut to_add);
         self.asteroids.retain(|asteroid| asteroid.alive);
         if self.asteroids.len() < 5 {
             self.asteroids.push(Asteroid::new(AsteroidSize::Large));
-            // println!("Added {}", get_time());
         }
     }
 

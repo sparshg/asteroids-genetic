@@ -26,13 +26,14 @@ impl Player {
         }
     }
 
-    pub fn check_bullet_collisions(&mut self, asteroid: &mut Asteroid) {
+    pub fn check_bullet_collisions(&mut self, asteroid: &mut Asteroid) -> bool {
         for bullet in &mut self.bullets {
             if asteroid.check_collision(bullet.pos) {
                 bullet.alive = false;
-                return;
+                return true;
             }
         }
+        false
     }
 
     pub fn update(&mut self) {
