@@ -46,17 +46,12 @@ impl Player {
                 });
             }
         }
-
-        self.bullets
-            .iter_mut()
-            .filter(|bullet| {
-                bullet.pos.x.abs() * 2. < screen_width()
-                    && bullet.pos.y.abs() * 2. < screen_height()
-            })
-            .for_each(|bullet| {
-                bullet.update();
-                bullet.draw();
-            });
+        self.bullets.retain(|bullet| {
+            bullet.pos.x.abs() * 2. < screen_width() && bullet.pos.y.abs() * 2. < screen_height()
+        });
+        for bullet in &mut self.bullets {
+            bullet.update();
+        }
 
         self.vel += (mag * self.dir - self.drag * self.vel.length() * self.vel) * get_frame_time();
         self.pos += self.vel * get_frame_time();
@@ -80,8 +75,12 @@ impl Player {
         draw_line(p1.x, p1.y, p2.x, p2.y, 2., WHITE);
         draw_line(p1.x, p1.y, p3.x, p3.y, 2., WHITE);
         draw_line(p4.x, p4.y, p5.x, p5.y, 2., WHITE);
-        if is_key_down(KeyCode::Up) && gen_range(0., 1.) < 0.5 {
+        if is_key_down(KeyCode::Up) && gen_range(0., 1.) < 0.4 {
             draw_triangle_lines(p6, p7, p8, 2., WHITE);
+        }
+
+        for bullet in &self.bullets {
+            bullet.draw();
         }
     }
 }

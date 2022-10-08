@@ -1,9 +1,12 @@
 mod asteroids;
 mod player;
+mod utils;
+mod world;
 
 use asteroids::Asteroid;
 use macroquad::prelude::*;
 use player::Player;
+use world::World;
 
 #[macroquad::main("Camera")]
 async fn main() {
@@ -12,16 +15,14 @@ async fn main() {
         zoom: vec2(2. / screen_width(), 2. / screen_height()),
         ..Default::default()
     };
-    let mut asteroid = Asteroid::new();
     set_camera(&cam);
+    let mut world = World::new();
+
     loop {
         clear_background(BLACK);
-        asteroid.update();
-        asteroid.draw();
+        world.update();
+        world.draw();
+
         next_frame().await
     }
-}
-
-pub fn rotate_vec(vec: Vec2, angle: f32) -> Vec2 {
-    vec2(angle.cos(), angle.sin()).rotate(vec)
 }
