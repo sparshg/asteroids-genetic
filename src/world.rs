@@ -1,4 +1,7 @@
-use crate::{asteroids::Asteroid, player::Player};
+use crate::{
+    asteroids::{Asteroid, AsteroidSize},
+    player::Player,
+};
 use macroquad::{prelude::*, rand::gen_range};
 
 #[derive(Default)]
@@ -18,13 +21,14 @@ impl World {
     pub fn update(&mut self) {
         self.player.update();
         // println!("{}", self.asteroids.len());
-        self.asteroids.retain(|asteroid| asteroid.is_visible());
         for asteroid in &mut self.asteroids {
             asteroid.update();
+            self.player.check_bullet_collisions(asteroid);
         }
+        self.asteroids.retain(|asteroid| asteroid.alive);
         if self.asteroids.len() < 5 {
-            self.asteroids.push(Asteroid::new());
-            println!("Added {}", get_time());
+            self.asteroids.push(Asteroid::new(AsteroidSize::Large));
+            // println!("Added {}", get_time());
         }
     }
 

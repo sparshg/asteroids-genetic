@@ -1,6 +1,8 @@
-use std::f32::consts::PI;
+use std::{f32::consts::PI, path::Iter};
 
 use macroquad::{prelude::*, rand::gen_range};
+
+use crate::asteroids::Asteroid;
 #[derive(Default)]
 pub struct Player {
     pos: Vec2,
@@ -24,6 +26,15 @@ impl Player {
         }
     }
 
+    pub fn check_bullet_collisions(&mut self, asteroid: &mut Asteroid) {
+        for bullet in &mut self.bullets {
+            if asteroid.check_collision(bullet.pos) {
+                bullet.alive = false;
+                return;
+            }
+        }
+    }
+
     pub fn update(&mut self) {
         let mut mag = 0.;
         if is_key_down(KeyCode::Right) {
@@ -43,14 +54,9 @@ impl Player {
                 self.bullets.push(Bullet {
                     pos: self.pos + self.dir.rotate(vec2(20., 0.)),
                     vel: self.dir.rotate(vec2(500., 0.)) + self.vel,
+                    alive: true,
                 });
             }
-        }
-        self.bullets.retain(|bullet| {
-            bullet.pos.x.abs() * 2. < screen_width() && bullet.pos.y.abs() * 2. < screen_height()
-        });
-        for bullet in &mut self.bullets {
-            bullet.update();
         }
 
         self.vel += (mag * self.dir - self.drag * self.vel.length() * self.vel) * get_frame_time();
@@ -61,6 +67,13 @@ impl Player {
         if self.pos.y.abs() > screen_height() / 2. + 10. {
             self.pos.y *= -1.;
         }
+
+        for bullet in &mut self.bullets {
+            bullet.update();
+        }
+        self.bullets.retain(|b| {
+            b.alive && b.pos.x.abs() * 2. < screen_width() && b.pos.y.abs() * 2. < screen_height()
+        });
     }
 
     pub fn draw(&self) {
@@ -88,6 +101,7 @@ impl Player {
 struct Bullet {
     pos: Vec2,
     vel: Vec2,
+    alive: bool,
 }
 
 impl Bullet {
