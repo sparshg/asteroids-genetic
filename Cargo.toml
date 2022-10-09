@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 macroquad = "0.3.24"
-nalgebra = { version = "0.31.1", features = ["rand-no-std"] }
+nalgebra = { version = "0.31.1", features = ["rand-no-std", "rand"] }
 rand = "0.8.5"
 rand_distr = "0.4.3"

@@ -1,7 +1,9 @@
 use nalgebra::*;
+use r::Rng;
 use rand_distr::StandardNormal;
 extern crate rand as r;
 
+#[derive(PartialEq, Debug, Clone, Copy)]
 enum ActivationFunc {
     Sigmoid,
     Tanh,
@@ -9,8 +11,9 @@ enum ActivationFunc {
 }
 pub struct NN {
     config: Vec<usize>,
-    weights: Vec<DMatrix<f32>>,
+    pub weights: Vec<DMatrix<f32>>,
     activ_func: ActivationFunc,
+    mut_rate: f32,
 }
 
 impl NN {
@@ -36,6 +39,32 @@ impl NN {
                 .collect(),
 
             activ_func: ActivationFunc::ReLU,
+            mut_rate: 0.05,
+        }
+    }
+
+    pub fn crossover(a: &NN, b: &NN) -> Self {
+        assert_eq!(a.config, b.config, "NN configs not same.");
+        Self {
+            config: a.config.to_owned(),
+            activ_func: a.activ_func,
+            mut_rate: a.mut_rate,
+            weights: a
+                .weights
+                .iter()
+                .zip(b.weights.iter())
+                .map(|(m1, m2)| m1.zip_map(m2, |ele1, ele2| if r::random() { ele1 } else { ele2 }))
+                .collect(),
+        }
+    }
+
+    pub fn mutation(&mut self) {
+        for weight in &mut self.weights {
+            for ele in weight {
+                if r::random() {
+                    *ele = r::thread_rng().sample::<f32, StandardNormal>(StandardNormal) * 0.05;
+                }
+            }
         }
     }
 

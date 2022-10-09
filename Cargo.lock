@@ -291,6 +291,7 @@ dependencies = [
  "num-rational",
  "num-traits",
  "rand",
+ "rand_distr",
  "simba",
  "typenum",
 ]
