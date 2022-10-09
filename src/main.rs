@@ -12,7 +12,7 @@ use world::World;
 async fn main() {
     rand::srand(macroquad::miniquad::date::now() as _);
     let cam = Camera2D {
-        zoom: vec2(2. / screen_width(), 2. / screen_height()),
+        zoom: vec2(2. / screen_width(), -2. / screen_height()),
         ..Default::default()
     };
     set_camera(&cam);
@@ -20,9 +20,10 @@ async fn main() {
 
     loop {
         clear_background(BLACK);
-        world.update();
+        if !world.over {
+            world.update();
+        }
         world.draw();
-
         next_frame().await
     }
 }

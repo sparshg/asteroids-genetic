@@ -57,27 +57,25 @@ impl Asteroid {
         asteroid
     }
 
-    pub fn check_collision(&mut self, pos: Vec2) -> bool {
-        let collided = (pos.x - self.pos.x) * (pos.x - self.pos.x)
-            + (pos.y - self.pos.y) * (pos.y - self.pos.y)
-            <= self.radius * self.radius;
-        if collided {
-            self.alive = false;
-        }
-        return collided;
+    pub fn check_collision(&mut self, pos: Vec2, rad: f32) -> bool {
+        (pos.x - self.pos.x) * (pos.x - self.pos.x) + (pos.y - self.pos.y) * (pos.y - self.pos.y)
+            <= (self.radius + rad) * (self.radius + rad)
     }
 
     pub fn update(&mut self) {
-        if self.alive {
-            self.pos += self.vel * get_frame_time();
-            self.rot += self.omega * get_frame_time();
-            self.alive = self.pos.y.abs() < screen_height() * 0.51 + self.radius
-                && self.pos.x.abs() < screen_width() * 0.51 + self.radius;
+        // if self.alive {
+        self.pos += self.vel * get_frame_time();
+        self.rot += self.omega * get_frame_time();
+        if self.pos.x.abs() > screen_width() * 0.5 + self.radius {
+            self.pos.x *= -1.;
         }
+        if self.pos.y.abs() > screen_height() * 0.5 + self.radius {
+            self.pos.y *= -1.;
+        }
+        // self.alive = self.pos.y.abs() < screen_height() * 0.51 + self.radius
+        //     && self.pos.x.abs() < screen_width() * 0.51 + self.radius;
+        // }
     }
-
-    // pub fn is_visible(&self) -> bool {
-    // }
 
     pub fn draw(&self) {
         draw_poly_lines(
@@ -86,7 +84,11 @@ impl Asteroid {
             self.sides,
             self.radius,
             self.rot,
-            2.,
+            match self.size {
+                AsteroidSize::Large => 2.,
+                AsteroidSize::Medium => 1.2,
+                AsteroidSize::Small => 0.8,
+            },
             WHITE,
         );
     }

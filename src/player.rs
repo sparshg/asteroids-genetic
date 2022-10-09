@@ -13,6 +13,7 @@ pub struct Player {
     bullets: Vec<Bullet>,
     last_shot: f32,
     shot_interval: f32,
+    alive: bool,
 }
 
 impl Player {
@@ -22,13 +23,23 @@ impl Player {
             rot: PI / 2.,
             drag: 0.001,
             shot_interval: 0.3,
+            alive: true,
             ..Default::default()
         }
     }
 
+    pub fn check_player_collision(&mut self, asteroid: &mut Asteroid) -> bool {
+        if asteroid.check_collision(self.pos, 8.) {
+            self.alive = false;
+            return true;
+        }
+        false
+    }
+
     pub fn check_bullet_collisions(&mut self, asteroid: &mut Asteroid) -> bool {
         for bullet in &mut self.bullets {
-            if asteroid.check_collision(bullet.pos) {
+            if asteroid.check_collision(bullet.pos, 0.) {
+                asteroid.alive = false;
                 bullet.alive = false;
                 return true;
             }
@@ -39,11 +50,11 @@ impl Player {
     pub fn update(&mut self) {
         let mut mag = 0.;
         if is_key_down(KeyCode::Right) {
-            self.rot -= 5. * get_frame_time();
+            self.rot += 5. * get_frame_time();
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
         if is_key_down(KeyCode::Left) {
-            self.rot += 5. * get_frame_time();
+            self.rot -= 5. * get_frame_time();
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
         if is_key_down(KeyCode::Up) {
