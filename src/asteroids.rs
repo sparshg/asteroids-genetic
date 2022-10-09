@@ -64,8 +64,8 @@ impl Asteroid {
 
     pub fn update(&mut self) {
         // if self.alive {
-        self.pos += self.vel * get_frame_time();
-        self.rot += self.omega * get_frame_time();
+        self.pos += self.vel;
+        self.rot += self.omega;
         if self.pos.x.abs() > screen_width() * 0.5 + self.radius {
             self.pos.x *= -1.;
         }

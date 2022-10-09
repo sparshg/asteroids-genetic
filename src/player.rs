@@ -57,11 +57,11 @@ impl Player {
     pub fn update(&mut self) {
         let mut mag = 0.;
         if is_key_down(KeyCode::Right) {
-            self.rot += 5. * get_frame_time();
+            self.rot += 5.;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
         if is_key_down(KeyCode::Left) {
-            self.rot -= 5. * get_frame_time();
+            self.rot -= 5.;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
         if is_key_down(KeyCode::Up) {
@@ -78,8 +78,8 @@ impl Player {
             }
         }
 
-        self.vel += (mag * self.dir - self.drag * self.vel.length() * self.vel) * get_frame_time();
-        self.pos += self.vel * get_frame_time();
+        self.vel += (mag * self.dir - self.drag * self.vel.length() * self.vel);
+        self.pos += self.vel;
         if self.pos.x.abs() > screen_width() / 2. + 10. {
             self.pos.x *= -1.;
         }
@@ -125,7 +125,7 @@ struct Bullet {
 
 impl Bullet {
     fn update(&mut self) {
-        self.pos += self.vel * get_frame_time();
+        self.pos += self.vel;
     }
     fn draw(&self) {
         draw_circle(self.pos.x, self.pos.y, 2., WHITE);
