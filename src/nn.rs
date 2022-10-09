@@ -11,7 +11,7 @@ enum ActivationFunc {
 }
 pub struct NN {
     config: Vec<usize>,
-    pub weights: Vec<DMatrix<f32>>,
+    weights: Vec<DMatrix<f32>>,
     activ_func: ActivationFunc,
     mut_rate: f32,
 }

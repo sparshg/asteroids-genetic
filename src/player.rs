@@ -2,7 +2,7 @@ use std::{f32::consts::PI, path::Iter};
 
 use macroquad::{prelude::*, rand::gen_range};
 
-use crate::asteroids::Asteroid;
+use crate::{asteroids::Asteroid, nn::NN};
 #[derive(Default)]
 pub struct Player {
     pos: Vec2,
@@ -13,6 +13,7 @@ pub struct Player {
     bullets: Vec<Bullet>,
     last_shot: f32,
     shot_interval: f32,
+    brain: Option<NN>,
     alive: bool,
 }
 
@@ -26,6 +27,12 @@ impl Player {
             alive: true,
             ..Default::default()
         }
+    }
+
+    pub fn simulate(brain: NN) -> Self {
+        let mut p = Player::new();
+        p.brain = Some(brain);
+        p
     }
 
     pub fn check_player_collision(&mut self, asteroid: &mut Asteroid) -> bool {

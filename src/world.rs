@@ -1,5 +1,6 @@
 use crate::{
     asteroids::{Asteroid, AsteroidSize},
+    nn::NN,
     player::Player,
 };
 use macroquad::{prelude::*, rand::gen_range};
@@ -16,6 +17,13 @@ impl World {
     pub fn new() -> Self {
         Self {
             player: Player::new(),
+            ..Default::default()
+        }
+    }
+
+    pub fn simulate(brain: NN) -> Self {
+        Self {
+            player: Player::simulate(brain),
             ..Default::default()
         }
     }

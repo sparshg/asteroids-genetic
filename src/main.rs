@@ -1,6 +1,7 @@
 mod asteroids;
 mod nn;
 mod player;
+mod population;
 mod world;
 
 use macroquad::prelude::*;
@@ -15,11 +16,8 @@ async fn main() {
         ..Default::default()
     };
     set_camera(&cam);
-    let mut world = World::new();
+    // let mut world = World::new();
     let mut nn = NN::new(vec![1, 2, 1]);
-    println!("{} {}", nn.weights[0], nn.weights[1]);
-    nn.mutation();
-    println!("{} {}", nn.weights[0], nn.weights[1]);
 
     loop {
         // clear_background(BLACK);
