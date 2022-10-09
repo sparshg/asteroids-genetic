@@ -34,14 +34,14 @@ impl NN {
                         * (2. / last as f32).sqrt()
                 })
                 .collect(),
+
             activ_func: ActivationFunc::ReLU,
         }
     }
 
-    pub fn feed_forward(&self, inputs: Vec<f32>) {
+    pub fn feed_forward(&self, inputs: Vec<f32>) -> Vec<f32> {
         let mut y = DMatrix::from_vec(inputs.len(), 1, inputs);
         for i in 0..self.config.len() - 1 {
-            println!("{} {}", y, self.weights[i]);
             y = (&self.weights[i] * y.insert_row(self.config[i] - 1, 1.)).map(|x| {
                 match self.activ_func {
                     ActivationFunc::ReLU => x.max(0.),
@@ -50,6 +50,6 @@ impl NN {
                 }
             });
         }
-        println!("{}", y);
+        y.column(0).data.into_slice().to_vec()
     }
 }

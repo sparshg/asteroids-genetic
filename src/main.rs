@@ -17,8 +17,8 @@ async fn main() {
     };
     set_camera(&cam);
     let mut world = World::new();
-    let nn = NN::new(vec![2, 3, 2]);
-    nn.feed_forward(vec![2., 3.]);
+    let nn = NN::new(vec![2, 3, 3]);
+    println!("{:?}", nn.feed_forward(vec![2., 3.]));
     loop {
         // clear_background(BLACK);
         // if !world.over {
