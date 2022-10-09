@@ -45,7 +45,7 @@ impl World {
                         ));
                     }
                     AsteroidSize::Medium => {
-                        let rand = vec2(gen_range(-30., 30.), gen_range(-30., 30.));
+                        let rand = vec2(gen_range(-40., 40.), gen_range(-40., 40.));
                         to_add.push(Asteroid::new_from(
                             asteroid.pos,
                             asteroid.vel + rand,

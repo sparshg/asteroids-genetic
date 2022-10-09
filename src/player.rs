@@ -19,8 +19,8 @@ pub struct Player {
 impl Player {
     pub fn new() -> Self {
         Self {
-            dir: vec2(0., 1.),
-            rot: PI / 2.,
+            dir: vec2(0., -1.),
+            rot: -PI / 2.,
             drag: 0.001,
             shot_interval: 0.3,
             alive: true,

@@ -1,11 +1,11 @@
 mod asteroids;
+mod nn;
 mod player;
 mod utils;
 mod world;
 
-use asteroids::Asteroid;
 use macroquad::prelude::*;
-use player::Player;
+use nn::NN;
 use world::World;
 
 #[macroquad::main("Camera")]
@@ -17,13 +17,14 @@ async fn main() {
     };
     set_camera(&cam);
     let mut world = World::new();
-
+    let nn = NN::new(vec![2, 3, 2]);
+    nn.feed_forward(vec![2., 3.]);
     loop {
-        clear_background(BLACK);
-        if !world.over {
-            world.update();
-        }
-        world.draw();
+        // clear_background(BLACK);
+        // if !world.over {
+        //     world.update();
+        // }
+        // world.draw();
         next_frame().await
     }
 }
