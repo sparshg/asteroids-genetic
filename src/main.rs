@@ -16,11 +16,21 @@ async fn main() {
         ..Default::default()
     };
     set_camera(&cam);
-    let mut pop = Population::new(5);
+    let mut pop = Population::new(100);
+    let mut speedup = false;
     loop {
         clear_background(BLACK);
-        pop.update();
-        pop.draw();
+        if is_key_pressed(KeyCode::S) {
+            speedup = !speedup;
+        }
+        if speedup {
+            for _ in 0..100 {
+                pop.update();
+            }
+        } else {
+            pop.update();
+            pop.draw();
+        }
         next_frame().await
     }
     // let mut world = World::new();

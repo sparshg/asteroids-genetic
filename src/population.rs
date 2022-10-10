@@ -14,7 +14,7 @@ impl Population {
         Self {
             size,
             worlds: (0..size)
-                .map(|_| World::simulate(NN::new(vec![33, 10, 4])))
+                .map(|_| World::simulate(NN::new(vec![33, 16, 4])))
                 .collect(),
             ..Default::default()
         }
@@ -30,6 +30,7 @@ impl Population {
         }
         if !alive {
             self.gen += 1;
+            println!("{}", self.gen);
             self.next_gen();
         }
     }
@@ -50,18 +51,19 @@ impl Population {
     }
 
     pub fn next_gen(&mut self) {
-        let total = self.worlds.iter().fold(0, |acc, x| acc + x.score);
-        self.worlds.sort_by(|a, b| b.score.cmp(&a.score));
-        let mut new_worlds = (0..self.size / 10)
-            .map(|i| World::simulate(self.worlds[i].see_brain().to_owned()))
-            .collect::<Vec<_>>();
+        let total = self.worlds.iter().fold(0., |acc, x| acc + x.fitness());
+        // self.worlds.sort_by(|a, b| b.fitness().cmp(&a.fitness()));
+        let mut new_worlds = Vec::new();
+        // (0..self.size / 10)
+        //     .map(|i| World::simulate(self.worlds[i].see_brain().to_owned()))
+        //     .collect::<Vec<_>>();
 
         while new_worlds.len() < self.size {
-            let rands = (gen_range(0, total + 1), gen_range(0, total + 1));
-            let mut sum = 0;
+            let rands = (gen_range(0., total), gen_range(0., total));
+            let mut sum = 0.;
             let (mut a, mut b) = (None, None);
             for world in &self.worlds {
-                sum += world.score;
+                sum += world.fitness();
                 if sum >= rands.0 {
                     a = Some(world.see_brain());
                 }

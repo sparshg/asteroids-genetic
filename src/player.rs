@@ -14,11 +14,12 @@ pub struct Player {
     last_shot: f32,
     shot_interval: f32,
     pub brain: Option<NN>,
-    search_radius: f32,
-    proximity_asteroids: Vec<f32>,
+    asteroids_data: Vec<f32>,
     max_asteroids: usize,
     debug: bool,
     alive: bool,
+    pub lifespan: u32,
+    pub shots: u32,
 }
 
 impl Player {
@@ -30,7 +31,6 @@ impl Player {
             // Change scaling when passing inputs if this is changed
             drag: 0.001,
             shot_interval: 0.3,
-            search_radius: 300.,
             alive: true,
             debug: false,
             ..Default::default()
@@ -50,8 +50,11 @@ impl Player {
     }
 
     pub fn check_player_collision(&mut self, asteroid: &mut Asteroid) -> bool {
-        self.proximity_asteroids
-            .extend([asteroid.pos.x, asteroid.pos.y, asteroid.radius]);
+        self.asteroids_data.extend([
+            asteroid.pos.x / screen_width() + 0.5,
+            asteroid.pos.y / screen_height() + 0.5,
+            asteroid.radius / 50.,
+        ]);
         if asteroid.check_collision(self.pos, 8.) {
             self.alive = false;
             return true;
@@ -71,10 +74,11 @@ impl Player {
     }
 
     pub fn update(&mut self) {
+        self.lifespan += 1;
         let mut mag = 0.;
         let mut keys = vec![false, false, false, false];
 
-        self.proximity_asteroids.resize(self.max_asteroids, 0.);
+        self.asteroids_data.resize(self.max_asteroids, 0.);
         let mut inputs = vec![
             self.pos.x / screen_width() + 0.5,
             self.pos.y / screen_height() + 0.5,
@@ -82,7 +86,7 @@ impl Player {
             self.vel.y / 11.,
             self.rot / TAU as f32,
         ];
-        inputs.append(self.proximity_asteroids.as_mut());
+        inputs.append(self.asteroids_data.as_mut());
         if let Some(brain) = &self.brain {
             keys = brain
                 .feed_forward(inputs)
@@ -105,6 +109,7 @@ impl Player {
         if is_key_down(KeyCode::Space) || keys[3] {
             if self.shot_interval + self.last_shot < get_time() as f32 {
                 self.last_shot = get_time() as f32;
+                self.shots += 1;
                 self.bullets.push(Bullet {
                     pos: self.pos + self.dir.rotate(vec2(20., 0.)),
                     vel: self.dir.rotate(vec2(8.5, 0.)) + self.vel,
@@ -151,7 +156,7 @@ impl Player {
         }
 
         if self.debug {
-            for a in self.proximity_asteroids.chunks(3) {
+            for a in self.asteroids_data.chunks(3) {
                 draw_circle_lines(a[0], a[1], a[2], 1., GRAY);
                 draw_line(self.pos.x, self.pos.y, a[0], a[1], 1., GRAY)
             }

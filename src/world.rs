@@ -35,6 +35,16 @@ impl World {
         self.player.brain.as_ref().unwrap()
     }
 
+    pub fn fitness(&self) -> f32 {
+        self.score as f32
+            + self.player.lifespan as f32 * 0.01
+            + if self.player.shots > 0 {
+                self.score as f32 / self.player.shots as f32 * 10.
+            } else {
+                0.
+            }
+    }
+
     pub fn update(&mut self) {
         self.player.update();
         let mut to_add: Vec<Asteroid> = Vec::new();
