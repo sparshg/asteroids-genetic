@@ -40,7 +40,7 @@ impl World {
                 self.score += 1;
                 match asteroid.size {
                     AsteroidSize::Large => {
-                        let rand = vec2(gen_range(-50., 50.), gen_range(-50., 50.));
+                        let rand = vec2(gen_range(-0.8, 0.8), gen_range(-0.8, 0.8));
                         to_add.push(Asteroid::new_from(
                             asteroid.pos,
                             asteroid.vel + rand,
@@ -53,7 +53,7 @@ impl World {
                         ));
                     }
                     AsteroidSize::Medium => {
-                        let rand = vec2(gen_range(-40., 40.), gen_range(-40., 40.));
+                        let rand = vec2(gen_range(-0.6, 0.6), gen_range(-0.6, 0.6));
                         to_add.push(Asteroid::new_from(
                             asteroid.pos,
                             asteroid.vel + rand,

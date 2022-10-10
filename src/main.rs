@@ -16,15 +16,15 @@ async fn main() {
         ..Default::default()
     };
     set_camera(&cam);
-    // let mut world = World::new();
-    let mut nn = NN::new(vec![1, 2, 1]);
+    let mut world = World::new();
+    // let mut nn = NN::new(vec![1, 2, 1]);
 
     loop {
-        // clear_background(BLACK);
-        // if !world.over {
-        //     world.update();
-        // }
-        // world.draw();
+        clear_background(BLACK);
+        if !world.over {
+            world.update();
+        }
+        world.draw();
         next_frame().await
     }
 }

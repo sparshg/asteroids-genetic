@@ -56,29 +56,39 @@ impl Player {
 
     pub fn update(&mut self) {
         let mut mag = 0.;
-        if is_key_down(KeyCode::Right) {
-            self.rot += 5.;
+        let mut keys = vec![false, false, false];
+        if let Some(brain) = &self.brain {
+            keys = brain
+                .feed_forward(vec![
+                    self.pos.x, self.pos.y, self.vel.x, self.vel.y, self.rot,
+                ])
+                .iter()
+                .map(|&x| if x > 0. { true } else { false })
+                .collect();
+        }
+        if is_key_down(KeyCode::Right) || keys[0] {
+            self.rot += 0.1;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Left) {
-            self.rot -= 5.;
+        if is_key_down(KeyCode::Left) || keys[1] {
+            self.rot -= 0.1;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Up) {
-            mag = 360.;
+        if is_key_down(KeyCode::Up) || keys[2] {
+            mag = 0.14;
         }
         if is_key_down(KeyCode::Space) {
             if self.shot_interval + self.last_shot < get_time() as f32 {
                 self.last_shot = get_time() as f32;
                 self.bullets.push(Bullet {
                     pos: self.pos + self.dir.rotate(vec2(20., 0.)),
-                    vel: self.dir.rotate(vec2(500., 0.)) + self.vel,
+                    vel: self.dir.rotate(vec2(8.5, 0.)) + self.vel,
                     alive: true,
                 });
             }
         }
 
-        self.vel += (mag * self.dir - self.drag * self.vel.length() * self.vel);
+        self.vel += mag * self.dir - self.drag * self.vel.length() * self.vel;
         self.pos += self.vel;
         if self.pos.x.abs() > screen_width() / 2. + 10. {
             self.pos.x *= -1.;

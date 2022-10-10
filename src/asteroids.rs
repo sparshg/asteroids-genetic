@@ -36,15 +36,15 @@ impl Asteroid {
         );
         Self {
             pos: r,
-            vel: 0.1 * -r
+            vel: 0.001 * -r
                 + vec2(
-                    gen_range(20., 60.) * if gen_range(0., 1.) > 0.5 { -1. } else { 1. },
-                    gen_range(20., 60.) * if gen_range(0., 1.) > 0.5 { -1. } else { 1. },
+                    gen_range(0.3, 1.) * if gen_range(0., 1.) > 0.5 { -1. } else { 1. },
+                    gen_range(0.3, 1.) * if gen_range(0., 1.) > 0.5 { -1. } else { 1. },
                 ),
             size: size,
             sides: sides,
             radius: radius,
-            omega: gen_range(50., 200.) * if gen_range(0., 1.) > 0.5 { -1. } else { 1. },
+            omega: gen_range(0.8, 3.5) * if gen_range(0., 1.) > 0.5 { -1. } else { 1. },
             rot: 0.,
             alive: true,
         }
