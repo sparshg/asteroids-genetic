@@ -9,8 +9,10 @@ enum ActivationFunc {
     Tanh,
     ReLU,
 }
+
+#[derive(Clone)]
 pub struct NN {
-    config: Vec<usize>,
+    pub config: Vec<usize>,
     weights: Vec<DMatrix<f32>>,
     activ_func: ActivationFunc,
     mut_rate: f32,
@@ -58,7 +60,7 @@ impl NN {
         }
     }
 
-    pub fn mutation(&mut self) {
+    pub fn mutate(&mut self) {
         for weight in &mut self.weights {
             for ele in weight {
                 if r::random() {

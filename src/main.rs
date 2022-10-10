@@ -5,7 +5,7 @@ mod population;
 mod world;
 
 use macroquad::prelude::*;
-use nn::NN;
+use population::Population;
 use world::World;
 
 #[macroquad::main("Camera")]
@@ -16,15 +16,20 @@ async fn main() {
         ..Default::default()
     };
     set_camera(&cam);
-    let mut world = World::new();
-    // let mut nn = NN::new(vec![1, 2, 1]);
-
+    let mut pop = Population::new(5);
     loop {
         clear_background(BLACK);
-        if !world.over {
-            world.update();
-        }
-        world.draw();
+        pop.update();
+        pop.draw();
         next_frame().await
     }
+    // let mut world = World::new();
+    // loop {
+    //     clear_background(BLACK);
+    //     if !world.over {
+    //         world.update();
+    //     }
+    //     world.draw();
+    //     next_frame().await
+    // }
 }

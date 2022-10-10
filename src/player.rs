@@ -1,4 +1,4 @@
-use std::{f32::consts::PI, path::Iter};
+use std::{f32::consts::PI, f64::consts::TAU};
 
 use macroquad::{prelude::*, rand::gen_range};
 
@@ -13,7 +13,11 @@ pub struct Player {
     bullets: Vec<Bullet>,
     last_shot: f32,
     shot_interval: f32,
-    brain: Option<NN>,
+    pub brain: Option<NN>,
+    search_radius: f32,
+    proximity_asteroids: Vec<f32>,
+    max_asteroids: usize,
+    debug: bool,
     alive: bool,
 }
 
@@ -21,21 +25,33 @@ impl Player {
     pub fn new() -> Self {
         Self {
             dir: vec2(0., -1.),
-            rot: -PI / 2.,
+            rot: 1.5 * PI,
+
+            // Change scaling when passing inputs if this is changed
             drag: 0.001,
             shot_interval: 0.3,
+            search_radius: 300.,
             alive: true,
+            debug: false,
             ..Default::default()
         }
     }
 
-    pub fn simulate(brain: NN) -> Self {
+    pub fn simulate(brain: NN, max_asteroids: usize) -> Self {
+        assert_eq!(
+            brain.config[0] - 1,
+            max_asteroids + 5,
+            "NN input size must match max_asteroids"
+        );
         let mut p = Player::new();
         p.brain = Some(brain);
+        p.max_asteroids = max_asteroids;
         p
     }
 
     pub fn check_player_collision(&mut self, asteroid: &mut Asteroid) -> bool {
+        self.proximity_asteroids
+            .extend([asteroid.pos.x, asteroid.pos.y, asteroid.radius]);
         if asteroid.check_collision(self.pos, 8.) {
             self.alive = false;
             return true;
@@ -56,28 +72,37 @@ impl Player {
 
     pub fn update(&mut self) {
         let mut mag = 0.;
-        let mut keys = vec![false, false, false];
+        let mut keys = vec![false, false, false, false];
+
+        self.proximity_asteroids.resize(self.max_asteroids, 0.);
+        let mut inputs = vec![
+            self.pos.x / screen_width() + 0.5,
+            self.pos.y / screen_height() + 0.5,
+            self.vel.x / 11.,
+            self.vel.y / 11.,
+            self.rot / TAU as f32,
+        ];
+        inputs.append(self.proximity_asteroids.as_mut());
         if let Some(brain) = &self.brain {
             keys = brain
-                .feed_forward(vec![
-                    self.pos.x, self.pos.y, self.vel.x, self.vel.y, self.rot,
-                ])
+                .feed_forward(inputs)
                 .iter()
                 .map(|&x| if x > 0. { true } else { false })
                 .collect();
         }
         if is_key_down(KeyCode::Right) || keys[0] {
-            self.rot += 0.1;
+            self.rot = (self.rot + 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
         if is_key_down(KeyCode::Left) || keys[1] {
-            self.rot -= 0.1;
+            self.rot = (self.rot - 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
         if is_key_down(KeyCode::Up) || keys[2] {
+            // Change scaling when passing inputs if this is changed
             mag = 0.14;
         }
-        if is_key_down(KeyCode::Space) {
+        if is_key_down(KeyCode::Space) || keys[3] {
             if self.shot_interval + self.last_shot < get_time() as f32 {
                 self.last_shot = get_time() as f32;
                 self.bullets.push(Bullet {
@@ -86,6 +111,10 @@ impl Player {
                     alive: true,
                 });
             }
+        }
+
+        if is_key_pressed(KeyCode::D) {
+            self.debug = !self.debug;
         }
 
         self.vel += mag * self.dir - self.drag * self.vel.length() * self.vel;
@@ -119,6 +148,13 @@ impl Player {
         draw_line(p4.x, p4.y, p5.x, p5.y, 2., WHITE);
         if is_key_down(KeyCode::Up) && gen_range(0., 1.) < 0.4 {
             draw_triangle_lines(p6, p7, p8, 2., WHITE);
+        }
+
+        if self.debug {
+            for a in self.proximity_asteroids.chunks(3) {
+                draw_circle_lines(a[0], a[1], a[2], 1., GRAY);
+                draw_line(self.pos.x, self.pos.y, a[0], a[1], 1., GRAY)
+            }
         }
 
         for bullet in &self.bullets {

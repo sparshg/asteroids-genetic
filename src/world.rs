@@ -9,23 +9,30 @@ use macroquad::{prelude::*, rand::gen_range};
 pub struct World {
     player: Player,
     asteroids: Vec<Asteroid>,
-    pub score: i32,
+    pub score: u32,
     pub over: bool,
+    max_asteroids: usize,
 }
 
 impl World {
     pub fn new() -> Self {
         Self {
             player: Player::new(),
+            max_asteroids: 28,
             ..Default::default()
         }
     }
 
     pub fn simulate(brain: NN) -> Self {
         Self {
-            player: Player::simulate(brain),
+            player: Player::simulate(brain, 28),
+            max_asteroids: 28,
             ..Default::default()
         }
+    }
+
+    pub fn see_brain(&self) -> &NN {
+        self.player.brain.as_ref().unwrap()
     }
 
     pub fn update(&mut self) {
@@ -77,7 +84,7 @@ impl World {
                 AsteroidSize::Medium => 2,
                 AsteroidSize::Small => 1,
             }
-        }) < 20
+        }) < self.max_asteroids
         {
             self.asteroids.push(Asteroid::new(AsteroidSize::Large));
         }
@@ -88,12 +95,12 @@ impl World {
         for asteroid in &self.asteroids {
             asteroid.draw();
         }
-        draw_text(
-            &format!("Score {}", self.score),
-            20. - screen_width() * 0.5,
-            30. - screen_height() * 0.5,
-            32.,
-            WHITE,
-        );
+        // draw_text(
+        //     &format!("Score {}", self.score),
+        //     20. - screen_width() * 0.5,
+        //     30. - screen_height() * 0.5,
+        //     32.,
+        //     WHITE,
+        // );
     }
 }

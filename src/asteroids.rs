@@ -10,7 +10,7 @@ pub struct Asteroid {
     pub vel: Vec2,
     pub size: AsteroidSize,
     sides: u8,
-    radius: f32,
+    pub radius: f32,
     rot: f32,
     omega: f32,
     pub alive: bool,
