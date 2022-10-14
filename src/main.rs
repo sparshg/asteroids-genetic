@@ -16,8 +16,11 @@ async fn main() {
         ..Default::default()
     };
     set_camera(&cam);
-    let mut pop = Population::new(100);
+    let mut pop = Population::new(10);
     let mut speedup = false;
+    // for _ in 0..100000 * 5 {
+    //     pop.update();
+    // }
     loop {
         clear_background(BLACK);
         if is_key_pressed(KeyCode::S) {

@@ -36,12 +36,24 @@ impl World {
     }
 
     pub fn fitness(&self) -> f32 {
-        self.score as f32
-            + self.player.lifespan as f32 * 0.01
-            + if self.player.shots > 0 {
-                self.score as f32 / self.player.shots as f32 * 10.
+        // println!(
+        //     "{} {} {}",
+        //     self.score as f32,
+        //     self.player.lifespan as f32 * 0.001,
+        //     if self.player.shots > 0 {
+        //         self.score as f32 / self.player.shots as f32 * 5.
+        //     } else {
+        //         0.
+        //     }
+        // );
+        (self.score + 1) as f32
+            * 10.
+            * self.player.lifespan as f32
+            * if self.player.shots > 0 {
+                (self.score as f32 / self.player.shots as f32)
+                    * (self.score as f32 / self.player.shots as f32)
             } else {
-                0.
+                1.
             }
     }
 

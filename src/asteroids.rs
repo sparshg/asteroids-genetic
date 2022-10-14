@@ -89,7 +89,7 @@ impl Asteroid {
                 AsteroidSize::Medium => 1.2,
                 AsteroidSize::Small => 0.8,
             },
-            Color::new(1., 1., 1., 0.5),
+            Color::new(1., 1., 1., 0.4),
         );
     }
 }

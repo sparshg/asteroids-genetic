@@ -1,3 +1,4 @@
+use macroquad::rand::gen_range;
 use nalgebra::*;
 use r::Rng;
 use rand_distr::StandardNormal;
@@ -10,10 +11,10 @@ enum ActivationFunc {
     ReLU,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NN {
     pub config: Vec<usize>,
-    weights: Vec<DMatrix<f32>>,
+    pub weights: Vec<DMatrix<f32>>,
     activ_func: ActivationFunc,
     mut_rate: f32,
 }
@@ -63,8 +64,8 @@ impl NN {
     pub fn mutate(&mut self) {
         for weight in &mut self.weights {
             for ele in weight {
-                if r::random() {
-                    *ele = r::thread_rng().sample::<f32, StandardNormal>(StandardNormal) * 0.05;
+                if gen_range(0., 1.) < 0.05 {
+                    *ele = r::thread_rng().sample::<f32, StandardNormal>(StandardNormal);
                 }
             }
         }

@@ -40,7 +40,7 @@ impl Player {
     pub fn simulate(brain: NN, max_asteroids: usize) -> Self {
         assert_eq!(
             brain.config[0] - 1,
-            max_asteroids + 5,
+            max_asteroids * 3 + 5,
             "NN input size must match max_asteroids"
         );
         let mut p = Player::new();
@@ -77,8 +77,7 @@ impl Player {
         self.lifespan += 1;
         let mut mag = 0.;
         let mut keys = vec![false, false, false, false];
-
-        self.asteroids_data.resize(self.max_asteroids, 0.);
+        self.asteroids_data.resize(self.max_asteroids * 3, 0.);
         let mut inputs = vec![
             self.pos.x / screen_width() + 0.5,
             self.pos.y / screen_height() + 0.5,
@@ -124,10 +123,10 @@ impl Player {
 
         self.vel += mag * self.dir - self.drag * self.vel.length() * self.vel;
         self.pos += self.vel;
-        if self.pos.x.abs() > screen_width() / 2. + 10. {
+        if self.pos.x.abs() > screen_width() * 0.5 + 10. {
             self.pos.x *= -1.;
         }
-        if self.pos.y.abs() > screen_height() / 2. + 10. {
+        if self.pos.y.abs() > screen_height() * 0.5 + 10. {
             self.pos.y *= -1.;
         }
 
