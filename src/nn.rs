@@ -36,13 +36,16 @@ impl NN {
                 .iter()
                 .zip(config.iter().skip(1))
                 .map(|(&curr, &last)| {
+                    // let a = DMatrix::<f32>::new_random(last, curr + 1);
+                    // println!("{}", a);
+                    // a
                     DMatrix::<f32>::from_distribution(last, curr + 1, &StandardNormal, &mut rng)
                         * (2. / last as f32).sqrt()
                 })
                 .collect(),
 
             activ_func: ActivationFunc::ReLU,
-            mut_rate: 0.05,
+            mut_rate: 0.02,
         }
     }
 
@@ -64,8 +67,10 @@ impl NN {
     pub fn mutate(&mut self) {
         for weight in &mut self.weights {
             for ele in weight {
-                if gen_range(0., 1.) < 0.05 {
+                if gen_range(0., 1.) < self.mut_rate {
+                    // *ele += gen_range(-1., 1.);
                     *ele = r::thread_rng().sample::<f32, StandardNormal>(StandardNormal);
+                    // *ele = r::thread_rng().sample::<f32, StandardNormal>(StandardNormal);
                 }
             }
         }

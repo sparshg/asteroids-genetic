@@ -12,6 +12,7 @@ pub struct World {
     pub score: u32,
     pub over: bool,
     max_asteroids: usize,
+    pub fitness: f32,
 }
 
 impl World {
@@ -23,7 +24,7 @@ impl World {
         }
     }
 
-    pub fn simulate(brain: NN) -> Self {
+    pub fn simulate(brain: Option<NN>) -> Self {
         Self {
             player: Player::simulate(brain, 28),
             max_asteroids: 28,
@@ -31,39 +32,55 @@ impl World {
         }
     }
 
+    pub fn set_best(&mut self) {
+        self.player.color = Some(RED);
+    }
+
     pub fn see_brain(&self) -> &NN {
         self.player.brain.as_ref().unwrap()
     }
 
-    pub fn fitness(&self) -> f32 {
-        // println!(
-        //     "{} {} {}",
-        //     self.score as f32,
-        //     self.player.lifespan as f32 * 0.001,
-        //     if self.player.shots > 0 {
-        //         self.score as f32 / self.player.shots as f32 * 5.
-        //     } else {
-        //         0.
-        //     }
-        // );
-        (self.score + 1) as f32
-            * 10.
-            * self.player.lifespan as f32
-            * if self.player.shots > 0 {
-                (self.score as f32 / self.player.shots as f32)
-                    * (self.score as f32 / self.player.shots as f32)
-            } else {
-                1.
-            }
-    }
+    // fn calc_fitness(&mut self) {
+    // println!(
+    //     "{} {} {}",
+    //     self.score as f32,
+    //     self.player.lifespan as f32 * 0.001,
+    //     if self.player.shots > 0 {
+    //         self.score as f32 / self.player.shots as f32 * 5.
+    //     } else {
+    //         0.
+    //     }
+    // );
+    // }
 
     pub fn update(&mut self) {
         self.player.update();
+        // if self.player.lifespan > 150 {
+        //     self.fitness = 1.
+        //         / ((self.player.pos * vec2(2. / screen_width(), 2. / screen_height()))
+        //             .distance_squared(vec2(0., -1.))
+        //             + self.player.vel.length_squared()
+        //                 * self.player.vel.length_squared()
+        //                 * 0.00006830134554
+        //             + 1.);
+        //     self.over = true;
+        // }
         let mut to_add: Vec<Asteroid> = Vec::new();
         for asteroid in &mut self.asteroids {
             asteroid.update();
             if self.player.check_player_collision(asteroid) {
                 self.over = true;
+                self.fitness = (self.score as f32 + 1.)
+                    * if self.player.shots > 0 {
+                        (self.score as f32 / self.player.shots as f32)
+                            * (self.score as f32 / self.player.shots as f32)
+                    } else {
+                        1.
+                    }
+                    * self.player.lifespan as f32;
+                // self.fitness = self.player.lifespan as f32 * self.player.lifespan as f32 * 0.001;
+
+                // println!("{} {} {}", self.score, self.player.lifespan, self.fitness);
             }
             if self.player.check_bullet_collisions(asteroid) {
                 self.score += 1;

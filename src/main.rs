@@ -16,9 +16,9 @@ async fn main() {
         ..Default::default()
     };
     set_camera(&cam);
-    let mut pop = Population::new(10);
+    let mut pop = Population::new(100);
     let mut speedup = false;
-    // for _ in 0..100000 * 5 {
+    // for _ in 0..10000 * 10 {
     //     pop.update();
     // }
     loop {

@@ -5,19 +5,21 @@ use macroquad::{prelude::*, rand::gen_range};
 use crate::{asteroids::Asteroid, nn::NN};
 #[derive(Default)]
 pub struct Player {
-    pos: Vec2,
-    vel: Vec2,
+    pub pos: Vec2,
+    pub vel: Vec2,
+    acc: f32,
     dir: Vec2,
     rot: f32,
     drag: f32,
     bullets: Vec<Bullet>,
-    last_shot: f32,
-    shot_interval: f32,
+    last_shot: u8,
+    shot_interval: u8,
     pub brain: Option<NN>,
     asteroids_data: Vec<f32>,
     max_asteroids: usize,
     debug: bool,
     alive: bool,
+    pub color: Option<Color>,
     pub lifespan: u32,
     pub shots: u32,
 }
@@ -30,21 +32,25 @@ impl Player {
 
             // Change scaling when passing inputs if this is changed
             drag: 0.001,
-            shot_interval: 0.3,
+            shot_interval: 18,
             alive: true,
             debug: false,
             ..Default::default()
         }
     }
 
-    pub fn simulate(brain: NN, max_asteroids: usize) -> Self {
-        assert_eq!(
-            brain.config[0] - 1,
-            max_asteroids * 3 + 5,
-            "NN input size must match max_asteroids"
-        );
+    pub fn simulate(brain: Option<NN>, max_asteroids: usize) -> Self {
         let mut p = Player::new();
-        p.brain = Some(brain);
+        if let Some(brain) = brain {
+            assert_eq!(
+                brain.config[0] - 1,
+                max_asteroids * 3 + 5,
+                "NN input size must match max_asteroids"
+            );
+            p.brain = Some(brain);
+        } else {
+            p.brain = Some(NN::new(vec![max_asteroids * 3 + 5, 16, 4]));
+        }
         p.max_asteroids = max_asteroids;
         p
     }
@@ -75,7 +81,8 @@ impl Player {
 
     pub fn update(&mut self) {
         self.lifespan += 1;
-        let mut mag = 0.;
+        self.last_shot += 1;
+        self.acc = 0.;
         let mut keys = vec![false, false, false, false];
         self.asteroids_data.resize(self.max_asteroids * 3, 0.);
         let mut inputs = vec![
@@ -87,11 +94,8 @@ impl Player {
         ];
         inputs.append(self.asteroids_data.as_mut());
         if let Some(brain) = &self.brain {
-            keys = brain
-                .feed_forward(inputs)
-                .iter()
-                .map(|&x| if x > 0. { true } else { false })
-                .collect();
+            // println!("{:?}", inputs);
+            keys = brain.feed_forward(inputs).iter().map(|&x| x > 0.).collect();
         }
         if is_key_down(KeyCode::Right) || keys[0] {
             self.rot = (self.rot + 0.1 + TAU as f32) % TAU as f32;
@@ -103,11 +107,11 @@ impl Player {
         }
         if is_key_down(KeyCode::Up) || keys[2] {
             // Change scaling when passing inputs if this is changed
-            mag = 0.14;
+            self.acc = 0.14;
         }
         if is_key_down(KeyCode::Space) || keys[3] {
-            if self.shot_interval + self.last_shot < get_time() as f32 {
-                self.last_shot = get_time() as f32;
+            if self.last_shot > self.shot_interval {
+                self.last_shot = 0;
                 self.shots += 1;
                 self.bullets.push(Bullet {
                     pos: self.pos + self.dir.rotate(vec2(20., 0.)),
@@ -121,7 +125,7 @@ impl Player {
             self.debug = !self.debug;
         }
 
-        self.vel += mag * self.dir - self.drag * self.vel.length() * self.vel;
+        self.vel += self.acc * self.dir - self.drag * self.vel.length() * self.vel;
         self.pos += self.vel;
         if self.pos.x.abs() > screen_width() * 0.5 + 10. {
             self.pos.x *= -1.;
@@ -139,6 +143,10 @@ impl Player {
     }
 
     pub fn draw(&self) {
+        let color = match self.color {
+            Some(c) => c,
+            None => Color::new(1., 1., 1., 0.1),
+        };
         let p1 = self.pos + self.dir.rotate(vec2(20., 0.));
         let p2 = self.pos + self.dir.rotate(vec2(-18., -12.667));
         let p3 = self.pos + self.dir.rotate(vec2(-18., 12.667));
@@ -147,11 +155,11 @@ impl Player {
         let p6 = self.pos + self.dir.rotate(vec2(-25., 0.));
         let p7 = self.pos + self.dir.rotate(vec2(-10., -6.));
         let p8 = self.pos + self.dir.rotate(vec2(-10., 6.));
-        draw_line(p1.x, p1.y, p2.x, p2.y, 2., WHITE);
-        draw_line(p1.x, p1.y, p3.x, p3.y, 2., WHITE);
-        draw_line(p4.x, p4.y, p5.x, p5.y, 2., WHITE);
-        if is_key_down(KeyCode::Up) && gen_range(0., 1.) < 0.4 {
-            draw_triangle_lines(p6, p7, p8, 2., WHITE);
+        draw_line(p1.x, p1.y, p2.x, p2.y, 2., color);
+        draw_line(p1.x, p1.y, p3.x, p3.y, 2., color);
+        draw_line(p4.x, p4.y, p5.x, p5.y, 2., color);
+        if self.acc > 0. && gen_range(0., 1.) < 0.4 {
+            draw_triangle_lines(p6, p7, p8, 2., color);
         }
 
         if self.debug {
