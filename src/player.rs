@@ -1,6 +1,7 @@
 use std::{f32::consts::PI, f64::consts::TAU};
 
 use macroquad::{prelude::*, rand::gen_range};
+use nalgebra::{max, partial_max};
 
 use crate::{asteroids::Asteroid, nn::NN};
 #[derive(Default)]
@@ -12,11 +13,10 @@ pub struct Player {
     rot: f32,
     drag: f32,
     bullets: Vec<Bullet>,
+    raycasts: Vec<f32>,
     last_shot: u8,
     shot_interval: u8,
     pub brain: Option<NN>,
-    asteroids_data: Vec<f32>,
-    max_asteroids: usize,
     debug: bool,
     alive: bool,
     pub color: Option<Color>,
@@ -35,32 +35,47 @@ impl Player {
             shot_interval: 18,
             alive: true,
             debug: false,
+            shots: 4,
+            raycasts: vec![0.; 8],
             ..Default::default()
         }
     }
 
-    pub fn simulate(brain: Option<NN>, max_asteroids: usize) -> Self {
+    pub fn simulate(brain: Option<NN>) -> Self {
         let mut p = Player::new();
         if let Some(brain) = brain {
             assert_eq!(
                 brain.config[0] - 1,
-                max_asteroids * 3 + 5,
+                8 + 0,
                 "NN input size must match max_asteroids"
             );
             p.brain = Some(brain);
         } else {
-            p.brain = Some(NN::new(vec![max_asteroids * 3 + 5, 16, 4]));
+            p.brain = Some(NN::new(vec![8 + 0, 16, 4]));
         }
-        p.max_asteroids = max_asteroids;
         p
     }
 
     pub fn check_player_collision(&mut self, asteroid: &mut Asteroid) -> bool {
-        self.asteroids_data.extend([
-            asteroid.pos.x / screen_width() + 0.5,
-            asteroid.pos.y / screen_height() + 0.5,
-            asteroid.radius / 50.,
-        ]);
+        // self.asteroids_data.extend([
+        //     asteroid.pos.x / screen_width() + 0.5,
+        //     asteroid.pos.y / screen_height() + 0.5,
+        //     asteroid.radius / 50.,
+        // ]);
+        let v = asteroid.pos - self.pos;
+        for i in 0..4 {
+            let dir = Vec2::from_angle(PI / 4. * i as f32).rotate(self.dir);
+            let cross = v.perp_dot(dir);
+            let dot = v.dot(dir);
+            if cross.abs() <= asteroid.radius {
+                self.raycasts[if dot >= 0. { i } else { i + 4 }] = *partial_max(
+                    &self.raycasts[if dot >= 0. { i } else { i + 4 }],
+                    &(1. / (dot.abs()
+                        - (asteroid.radius * asteroid.radius - cross * cross).sqrt())),
+                )
+                .unwrap();
+            }
+        }
         if asteroid.check_collision(self.pos, 8.) {
             self.alive = false;
             return true;
@@ -84,32 +99,35 @@ impl Player {
         self.last_shot += 1;
         self.acc = 0.;
         let mut keys = vec![false, false, false, false];
-        self.asteroids_data.resize(self.max_asteroids * 3, 0.);
-        let mut inputs = vec![
-            self.pos.x / screen_width() + 0.5,
-            self.pos.y / screen_height() + 0.5,
-            self.vel.x / 11.,
-            self.vel.y / 11.,
-            self.rot / TAU as f32,
-        ];
-        inputs.append(self.asteroids_data.as_mut());
+        // self.asteroids_data.resize(self.max_asteroids * 3, 0.);
+        // let mut inputs = vec![
+        //     self.pos.x / screen_width() + 0.5,
+        //     self.pos.y / screen_height() + 0.5,
+        //     self.vel.x / 11.,
+        //     self.vel.y / 11.,
+        //     self.rot / TAU as f32,
+        // ];
+        // inputs.append(self.raycasts.as_mut());
+        let inputs = self.raycasts.clone();
+        // inputs.append(self.asteroids_data.as_mut());
         if let Some(brain) = &self.brain {
             // println!("{:?}", inputs);
             keys = brain.feed_forward(inputs).iter().map(|&x| x > 0.).collect();
         }
-        if is_key_down(KeyCode::Right) || keys[0] {
+        self.raycasts = vec![0.; 8];
+        if is_key_down(KeyCode::Right) && self.debug || keys[0] {
             self.rot = (self.rot + 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Left) || keys[1] {
+        if is_key_down(KeyCode::Left) && self.debug || keys[1] {
             self.rot = (self.rot - 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Up) || keys[2] {
+        if is_key_down(KeyCode::Up) && self.debug || keys[2] {
             // Change scaling when passing inputs if this is changed
             self.acc = 0.14;
         }
-        if is_key_down(KeyCode::Space) || keys[3] {
+        if is_key_down(KeyCode::Space) && self.debug || keys[3] {
             if self.last_shot > self.shot_interval {
                 self.last_shot = 0;
                 self.shots += 1;
@@ -145,7 +163,7 @@ impl Player {
     pub fn draw(&self) {
         let color = match self.color {
             Some(c) => c,
-            None => Color::new(1., 1., 1., 0.1),
+            None => Color::new(1., 1., 1., 0.3),
         };
         let p1 = self.pos + self.dir.rotate(vec2(20., 0.));
         let p2 = self.pos + self.dir.rotate(vec2(-18., -12.667));
@@ -163,9 +181,20 @@ impl Player {
         }
 
         if self.debug {
-            for a in self.asteroids_data.chunks(3) {
-                draw_circle_lines(a[0], a[1], a[2], 1., GRAY);
-                draw_line(self.pos.x, self.pos.y, a[0], a[1], 1., GRAY)
+            //     for a in self.asteroids_data.chunks(3) {
+            //         draw_circle_lines(a[0], a[1], a[2], 1., GRAY);
+            //         draw_line(self.pos.x, self.pos.y, a[0], a[1], 1., GRAY)
+            //     }
+            for (i, r) in self.raycasts.iter().enumerate() {
+                let dir = Vec2::from_angle(PI / 4. * i as f32).rotate(self.dir);
+                draw_line(
+                    self.pos.x,
+                    self.pos.y,
+                    self.pos.x + dir.x / r,
+                    self.pos.y + dir.y / r,
+                    1.,
+                    GRAY,
+                );
             }
         }
 

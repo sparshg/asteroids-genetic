@@ -20,14 +20,23 @@ impl World {
         Self {
             player: Player::new(),
             max_asteroids: 28,
+            score: 1,
             ..Default::default()
         }
     }
 
     pub fn simulate(brain: Option<NN>) -> Self {
         Self {
-            player: Player::simulate(brain, 28),
+            player: Player::simulate(brain),
             max_asteroids: 28,
+            score: 1,
+            asteroids: vec![
+                Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large),
+                Asteroid::new(AsteroidSize::Large),
+                Asteroid::new(AsteroidSize::Large),
+                Asteroid::new(AsteroidSize::Large),
+                Asteroid::new(AsteroidSize::Large),
+            ],
             ..Default::default()
         }
     }
@@ -71,13 +80,10 @@ impl World {
             if self.player.check_player_collision(asteroid) {
                 self.over = true;
                 self.fitness = (self.score as f32 + 1.)
-                    * if self.player.shots > 0 {
-                        (self.score as f32 / self.player.shots as f32)
-                            * (self.score as f32 / self.player.shots as f32)
-                    } else {
-                        1.
-                    }
-                    * self.player.lifespan as f32;
+                    * (self.score as f32 / self.player.shots as f32)
+                    * (self.score as f32 / self.player.shots as f32)
+                    * self.player.lifespan as f32
+                    * 0.01;
                 // self.fitness = self.player.lifespan as f32 * self.player.lifespan as f32 * 0.001;
 
                 // println!("{} {} {}", self.score, self.player.lifespan, self.fitness);
@@ -117,15 +123,16 @@ impl World {
         }
         self.asteroids.append(&mut to_add);
         self.asteroids.retain(|asteroid| asteroid.alive);
-        if self.asteroids.iter().fold(0, |acc, x| {
-            acc + match x.size {
-                AsteroidSize::Large => 4,
-                AsteroidSize::Medium => 2,
-                AsteroidSize::Small => 1,
-            }
-        }) < self.max_asteroids
-        {
-            self.asteroids.push(Asteroid::new(AsteroidSize::Large));
+        // if self.asteroids.iter().fold(0, |acc, x| {
+        //     acc + match x.size {
+        //         AsteroidSize::Large => 4,
+        //         AsteroidSize::Medium => 2,
+        //         AsteroidSize::Small => 1,
+        //     }
+        // }) < self.max_asteroids
+        if self.player.lifespan % 400 == 0 {
+            self.asteroids
+                .push(Asteroid::new_to(self.player.pos, 1.5, AsteroidSize::Large));
         }
     }
 

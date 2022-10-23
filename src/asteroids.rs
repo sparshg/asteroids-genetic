@@ -57,6 +57,12 @@ impl Asteroid {
         asteroid
     }
 
+    pub fn new_to(pos: Vec2, speed: f32, size: AsteroidSize) -> Self {
+        let mut asteroid = Asteroid::new(size);
+        asteroid.vel = (pos - asteroid.pos) * 0.002 * speed;
+        asteroid
+    }
+
     pub fn check_collision(&mut self, pos: Vec2, rad: f32) -> bool {
         (pos.x - self.pos.x) * (pos.x - self.pos.x) + (pos.y - self.pos.y) * (pos.y - self.pos.y)
             <= (self.radius + rad) * (self.radius + rad)
@@ -89,7 +95,7 @@ impl Asteroid {
                 AsteroidSize::Medium => 1.2,
                 AsteroidSize::Small => 0.8,
             },
-            Color::new(1., 1., 1., 1.),
+            Color::new(1., 1., 1., 0.4),
         );
     }
 }
