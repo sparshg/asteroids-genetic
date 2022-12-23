@@ -20,7 +20,6 @@ impl World {
         Self {
             player: Player::new(),
             max_asteroids: 28,
-            score: 1,
             ..Default::default()
         }
     }
@@ -29,14 +28,7 @@ impl World {
         Self {
             player: Player::simulate(brain),
             max_asteroids: 28,
-            score: 1,
-            asteroids: vec![
-                Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large),
-                Asteroid::new(AsteroidSize::Large),
-                Asteroid::new(AsteroidSize::Large),
-                Asteroid::new(AsteroidSize::Large),
-                Asteroid::new(AsteroidSize::Large),
-            ],
+            asteroids: vec![Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large)],
             ..Default::default()
         }
     }
@@ -79,11 +71,10 @@ impl World {
             asteroid.update();
             if self.player.check_player_collision(asteroid) {
                 self.over = true;
-                self.fitness = (self.score as f32 + 1.)
-                    * (self.score as f32 / self.player.shots as f32)
-                    * (self.score as f32 / self.player.shots as f32)
-                    * self.player.lifespan as f32
-                    * 0.01;
+                self.fitness = (self.score as f32).powf(2.) * 0.01;
+                // * (self.score as f32 / self.player.shots as f32)
+                // * (self.score as f32 / self.player.shots as f32)
+                // + self.player.lifespan as f32 * 0.01;
                 // self.fitness = self.player.lifespan as f32 * self.player.lifespan as f32 * 0.001;
 
                 // println!("{} {} {}", self.score, self.player.lifespan, self.fitness);
@@ -130,7 +121,8 @@ impl World {
         //         AsteroidSize::Small => 1,
         //     }
         // }) < self.max_asteroids
-        if self.player.lifespan % 400 == 0 {
+        // {
+        if self.player.lifespan % 200 == 0 {
             self.asteroids
                 .push(Asteroid::new_to(self.player.pos, 1.5, AsteroidSize::Large));
         }

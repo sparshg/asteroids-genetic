@@ -6,7 +6,6 @@ mod world;
 
 use macroquad::prelude::*;
 use population::Population;
-use world::World;
 
 #[macroquad::main("Camera")]
 async fn main() {
@@ -18,7 +17,7 @@ async fn main() {
     set_camera(&cam);
     let mut pop = Population::new(100);
     let mut speedup = false;
-    // for _ in 0..10000 * 10 {
+    // for _ in 0..10000 * 100 {
     //     pop.update();
     // }
     loop {

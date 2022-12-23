@@ -59,6 +59,9 @@ impl Population {
         let mut new_worlds = (0..self.size / 20)
             .map(|i| World::simulate(Some(self.worlds[i].see_brain().to_owned())))
             .collect::<Vec<_>>();
+        for _ in 0..self.size / 20 {
+            new_worlds.push(World::simulate(None));
+        }
         // if is_key_down(KeyCode::K) {
         new_worlds[0].set_best();
         // }

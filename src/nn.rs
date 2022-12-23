@@ -36,7 +36,7 @@ impl NN {
                 .iter()
                 .zip(config.iter().skip(1))
                 .map(|(&curr, &last)| {
-                    // let a = DMatrix::<f32>::new_random(last, curr + 1);
+                    // DMatrix::<f32>::new_random(last, curr + 1)
                     // println!("{}", a);
                     // a
                     DMatrix::<f32>::from_distribution(last, curr + 1, &StandardNormal, &mut rng)

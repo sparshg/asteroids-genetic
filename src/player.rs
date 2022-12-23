@@ -1,7 +1,7 @@
 use std::{f32::consts::PI, f64::consts::TAU};
 
 use macroquad::{prelude::*, rand::gen_range};
-use nalgebra::{max, partial_max};
+use nalgebra::partial_max;
 
 use crate::{asteroids::Asteroid, nn::NN};
 #[derive(Default)]
@@ -35,7 +35,6 @@ impl Player {
             shot_interval: 18,
             alive: true,
             debug: false,
-            shots: 4,
             raycasts: vec![0.; 8],
             ..Default::default()
         }
@@ -46,12 +45,12 @@ impl Player {
         if let Some(brain) = brain {
             assert_eq!(
                 brain.config[0] - 1,
-                8 + 0,
+                8 + 2,
                 "NN input size must match max_asteroids"
             );
             p.brain = Some(brain);
         } else {
-            p.brain = Some(NN::new(vec![8 + 0, 16, 4]));
+            p.brain = Some(NN::new(vec![8 + 2, 16, 16, 3]));
         }
         p
     }
@@ -98,17 +97,19 @@ impl Player {
         self.lifespan += 1;
         self.last_shot += 1;
         self.acc = 0.;
-        let mut keys = vec![false, false, false, false];
+        let mut keys = vec![false, false, false];
         // self.asteroids_data.resize(self.max_asteroids * 3, 0.);
-        // let mut inputs = vec![
-        //     self.pos.x / screen_width() + 0.5,
-        //     self.pos.y / screen_height() + 0.5,
-        //     self.vel.x / 11.,
-        //     self.vel.y / 11.,
-        //     self.rot / TAU as f32,
-        // ];
-        // inputs.append(self.raycasts.as_mut());
-        let inputs = self.raycasts.clone();
+        let mut inputs = vec![
+            // self.pos.x / screen_width() + 0.5,
+            // self.pos.y / screen_height() + 0.5,
+            // self.vel.x / 11.,
+            // self.vel.y / 11.,
+            // self.rot / TAU as f32,
+            self.rot.cos(),
+            self.rot.sin(),
+        ];
+        inputs.append(self.raycasts.as_mut());
+        // let inputs = self.raycasts.clone();
         // inputs.append(self.asteroids_data.as_mut());
         if let Some(brain) = &self.brain {
             // println!("{:?}", inputs);
@@ -123,11 +124,11 @@ impl Player {
             self.rot = (self.rot - 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Up) && self.debug || keys[2] {
-            // Change scaling when passing inputs if this is changed
-            self.acc = 0.14;
-        }
-        if is_key_down(KeyCode::Space) && self.debug || keys[3] {
+        // if is_key_down(KeyCode::Up) && self.debug || keys[2] {
+        // Change scaling when passing inputs if this is changed
+        //     self.acc = 0.14;
+        // }
+        if is_key_down(KeyCode::Space) && self.debug || keys[2] {
             if self.last_shot > self.shot_interval {
                 self.last_shot = 0;
                 self.shots += 1;
