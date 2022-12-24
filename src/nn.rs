@@ -22,8 +22,6 @@ pub struct NN {
 impl NN {
     // Vec of number of neurons in input, hidden 1, hidden 2, ..., output layers
     pub fn new(config: Vec<usize>) -> Self {
-        let mut rng = r::thread_rng();
-
         Self {
             config: config
                 .iter()
@@ -36,15 +34,15 @@ impl NN {
                 .iter()
                 .zip(config.iter().skip(1))
                 .map(|(&curr, &last)| {
-                    // DMatrix::<f32>::new_random(last, curr + 1)
+                    DMatrix::<f32>::new_random(last, curr + 1)
                     // println!("{}", a);
                     // a
-                    DMatrix::<f32>::from_distribution(last, curr + 1, &StandardNormal, &mut rng)
-                        * (2. / last as f32).sqrt()
+                    // DMatrix::<f32>::from_distribution(last, curr + 1, &StandardNormal, &mut rng)
+                    //     * (2. / last as f32).sqrt()
                 })
                 .collect(),
 
-            activ_func: ActivationFunc::ReLU,
+            activ_func: ActivationFunc::Sigmoid,
             mut_rate: 0.02,
         }
     }

@@ -1,10 +1,11 @@
-mod asteroids;
 mod nn;
 mod player;
 mod population;
 mod world;
 
 use macroquad::prelude::*;
+use nn::NN;
+use player::Player;
 use population::Population;
 
 #[macroquad::main("Camera")]
@@ -17,6 +18,8 @@ async fn main() {
     set_camera(&cam);
     let mut pop = Population::new(100);
     let mut speedup = false;
+    // let mut player = Player::new();
+
     // for _ in 0..10000 * 100 {
     //     pop.update();
     // }
@@ -26,13 +29,15 @@ async fn main() {
             speedup = !speedup;
         }
         if speedup {
-            for _ in 0..100 {
+            for _ in 0..1000 {
                 pop.update();
             }
         } else {
             pop.update();
             pop.draw();
         }
+        // player.update();
+        // player.draw();
         next_frame().await
     }
     // let mut world = World::new();

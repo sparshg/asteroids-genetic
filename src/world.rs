@@ -1,144 +1,100 @@
-use crate::{
-    asteroids::{Asteroid, AsteroidSize},
-    nn::NN,
-    player::Player,
-};
+use crate::{nn::NN, player::Player};
 use macroquad::{prelude::*, rand::gen_range};
+
+pub struct Pillar {
+    pub x: f32,
+    pub y: f32,
+    w: f32,
+    pub h: f32,
+}
+
+impl Pillar {
+    pub fn new(h: f32) -> Self {
+        Self {
+            x: screen_width() * 0.5,
+            y: gen_range(50., screen_height() - 250.) - screen_height() * 0.5,
+            w: 50.,
+            h,
+        }
+    }
+
+    pub fn update(&mut self) {
+        self.x -= 5.;
+    }
+
+    pub fn draw(&self) {
+        draw_rectangle(
+            self.x,
+            -screen_height() * 0.5,
+            self.w,
+            self.y + screen_height() * 0.5,
+            WHITE,
+        );
+        draw_rectangle(
+            self.x,
+            self.y + self.h,
+            self.w,
+            screen_height() * 0.5 - self.y - self.h,
+            WHITE,
+        );
+    }
+}
 
 #[derive(Default)]
 pub struct World {
-    player: Player,
-    asteroids: Vec<Asteroid>,
-    pub score: u32,
     pub over: bool,
-    max_asteroids: usize,
-    pub fitness: f32,
+    pub h: f32,
+    pub pillars: Vec<Pillar>,
+    next: i32,
 }
 
 impl World {
-    pub fn new() -> Self {
+    pub fn new(h: f32) -> Self {
         Self {
-            player: Player::new(),
-            max_asteroids: 28,
+            pillars: vec![Pillar::new(200.)],
+            h,
             ..Default::default()
         }
     }
 
-    pub fn simulate(brain: Option<NN>) -> Self {
-        Self {
-            player: Player::simulate(brain),
-            max_asteroids: 28,
-            asteroids: vec![Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large)],
-            ..Default::default()
+    pub fn check_collision(&mut self, player: &mut Player) {
+        for pillar in self.pillars.iter() {
+            if player.pos.x + player.r > pillar.x
+                && player.pos.x - player.r < pillar.x + pillar.w
+                && (player.pos.y - player.r < pillar.y
+                    || player.pos.y + player.r > pillar.y + pillar.h)
+            {
+                player.alive = false;
+            }
         }
     }
-
-    pub fn set_best(&mut self) {
-        self.player.color = Some(RED);
-    }
-
-    pub fn see_brain(&self) -> &NN {
-        self.player.brain.as_ref().unwrap()
-    }
-
-    // fn calc_fitness(&mut self) {
-    // println!(
-    //     "{} {} {}",
-    //     self.score as f32,
-    //     self.player.lifespan as f32 * 0.001,
-    //     if self.player.shots > 0 {
-    //         self.score as f32 / self.player.shots as f32 * 5.
-    //     } else {
-    //         0.
-    //     }
-    // );
-    // }
 
     pub fn update(&mut self) {
-        self.player.update();
-        // if self.player.lifespan > 150 {
-        //     self.fitness = 1.
-        //         / ((self.player.pos * vec2(2. / screen_width(), 2. / screen_height()))
-        //             .distance_squared(vec2(0., -1.))
-        //             + self.player.vel.length_squared()
-        //                 * self.player.vel.length_squared()
-        //                 * 0.00006830134554
-        //             + 1.);
-        //     self.over = true;
-        // }
-        let mut to_add: Vec<Asteroid> = Vec::new();
-        for asteroid in &mut self.asteroids {
-            asteroid.update();
-            if self.player.check_player_collision(asteroid) {
-                self.over = true;
-                self.fitness = (self.score as f32).powf(2.) * 0.01;
-                // * (self.score as f32 / self.player.shots as f32)
-                // * (self.score as f32 / self.player.shots as f32)
-                // + self.player.lifespan as f32 * 0.01;
-                // self.fitness = self.player.lifespan as f32 * self.player.lifespan as f32 * 0.001;
-
-                // println!("{} {} {}", self.score, self.player.lifespan, self.fitness);
+        self.next += 1;
+        if self.next == 100 {
+            if self.h > 100. {
+                self.h -= 1.;
             }
-            if self.player.check_bullet_collisions(asteroid) {
-                self.score += 1;
-                match asteroid.size {
-                    AsteroidSize::Large => {
-                        let rand = vec2(gen_range(-0.8, 0.8), gen_range(-0.8, 0.8));
-                        to_add.push(Asteroid::new_from(
-                            asteroid.pos,
-                            asteroid.vel + rand,
-                            AsteroidSize::Medium,
-                        ));
-                        to_add.push(Asteroid::new_from(
-                            asteroid.pos,
-                            asteroid.vel - rand,
-                            AsteroidSize::Medium,
-                        ));
-                    }
-                    AsteroidSize::Medium => {
-                        let rand = vec2(gen_range(-0.6, 0.6), gen_range(-0.6, 0.6));
-                        to_add.push(Asteroid::new_from(
-                            asteroid.pos,
-                            asteroid.vel + rand,
-                            AsteroidSize::Small,
-                        ));
-                        to_add.push(Asteroid::new_from(
-                            asteroid.pos,
-                            asteroid.vel - rand,
-                            AsteroidSize::Small,
-                        ));
-                    }
-                    _ => {}
-                }
-            }
+            self.pillars.push(Pillar::new(self.h));
+            self.next = 0;
         }
-        self.asteroids.append(&mut to_add);
-        self.asteroids.retain(|asteroid| asteroid.alive);
-        // if self.asteroids.iter().fold(0, |acc, x| {
-        //     acc + match x.size {
-        //         AsteroidSize::Large => 4,
-        //         AsteroidSize::Medium => 2,
-        //         AsteroidSize::Small => 1,
-        //     }
-        // }) < self.max_asteroids
-        // {
-        if self.player.lifespan % 200 == 0 {
-            self.asteroids
-                .push(Asteroid::new_to(self.player.pos, 1.5, AsteroidSize::Large));
+        self.pillars
+            .retain(|x| x.x + x.w + 20. + screen_width() * 0.25 > 0.);
+        for pillar in self.pillars.iter_mut() {
+            pillar.update();
         }
     }
 
     pub fn draw(&self) {
-        self.player.draw();
-        for asteroid in &self.asteroids {
-            asteroid.draw();
+        for pillar in self.pillars.iter() {
+            pillar.draw();
         }
-        // draw_text(
-        //     &format!("Score {}", self.score),
-        //     20. - screen_width() * 0.5,
-        //     30. - screen_height() * 0.5,
-        //     32.,
-        //     WHITE,
-        // );
+        draw_text(
+            &format!("Height: {}", self.h),
+            20. - screen_width() * 0.5,
+            20. - screen_height() * 0.5,
+            20.,
+            WHITE,
+        );
     }
 }
