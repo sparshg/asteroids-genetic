@@ -6,6 +6,7 @@ use crate::{nn::NN, world::World};
 pub struct Population {
     size: usize,
     gen: i32,
+    best: bool,
     pub worlds: Vec<World>,
 }
 
@@ -30,21 +31,28 @@ impl Population {
             self.gen += 1;
             self.next_gen();
         }
+        if is_key_pressed(KeyCode::Z) {
+            self.best = !self.best;
+        }
     }
 
     pub fn draw(&self) {
         for world in self.worlds.iter().rev() {
-            if !world.over {
+            if self.best {
+                if world.player.color.is_some() {
+                    world.draw();
+                }
+            } else if !world.over {
                 world.draw();
-                draw_text(
-                    &format!("Gen: {}", self.gen),
-                    -150. + screen_width() * 0.5,
-                    30. - screen_height() * 0.5,
-                    32.,
-                    WHITE,
-                );
             }
         }
+        draw_text(
+            &format!("Gen: {}", self.gen),
+            -150. + screen_width() * 0.5,
+            30. - screen_height() * 0.5,
+            32.,
+            WHITE,
+        );
     }
 
     pub fn next_gen(&mut self) {

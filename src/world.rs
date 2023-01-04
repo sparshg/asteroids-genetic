@@ -7,9 +7,9 @@ use macroquad::{prelude::*, rand::gen_range};
 
 #[derive(Default)]
 pub struct World {
-    player: Player,
+    pub player: Player,
     asteroids: Vec<Asteroid>,
-    pub score: u32,
+    pub score: f32,
     pub over: bool,
     max_asteroids: usize,
     pub fitness: f32,
@@ -20,7 +20,7 @@ impl World {
         Self {
             player: Player::new(),
             max_asteroids: 28,
-            score: 1,
+            score: 0.,
             ..Default::default()
         }
     }
@@ -29,7 +29,7 @@ impl World {
         Self {
             player: Player::simulate(brain),
             max_asteroids: 28,
-            score: 1,
+            score: 0.,
             asteroids: vec![
                 Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large),
                 Asteroid::new(AsteroidSize::Large),
@@ -79,17 +79,13 @@ impl World {
             asteroid.update();
             if self.player.check_player_collision(asteroid) {
                 self.over = true;
-                self.fitness = (self.score as f32 + 1.)
-                    * (self.score as f32 / self.player.shots as f32)
-                    * (self.score as f32 / self.player.shots as f32)
-                    * self.player.lifespan as f32
-                    * 0.01;
-                // self.fitness = self.player.lifespan as f32 * self.player.lifespan as f32 * 0.001;
+                self.fitness =
+                    (self.score / self.player.shots as f32).powi(2) * self.player.lifespan as f32;
 
                 // println!("{} {} {}", self.score, self.player.lifespan, self.fitness);
             }
             if self.player.check_bullet_collisions(asteroid) {
-                self.score += 1;
+                self.score += 1.;
                 match asteroid.size {
                     AsteroidSize::Large => {
                         let rand = vec2(gen_range(-0.8, 0.8), gen_range(-0.8, 0.8));
@@ -130,7 +126,8 @@ impl World {
         //         AsteroidSize::Small => 1,
         //     }
         // }) < self.max_asteroids
-        if self.player.lifespan % 400 == 0 {
+        // {
+        if self.player.lifespan % 200 == 0 {
             self.asteroids
                 .push(Asteroid::new_to(self.player.pos, 1.5, AsteroidSize::Large));
         }
@@ -141,12 +138,14 @@ impl World {
         for asteroid in &self.asteroids {
             asteroid.draw();
         }
-        // draw_text(
-        //     &format!("Score {}", self.score),
-        //     20. - screen_width() * 0.5,
-        //     30. - screen_height() * 0.5,
-        //     32.,
-        //     WHITE,
-        // );
+        draw_text(
+            &format!("{}", (self.score / self.player.shots as f32).powi(2) as f32),
+            // 20. - screen_width() * 0.5,
+            // 30. - screen_height() * 0.5,
+            self.player.pos.x - 20.,
+            self.player.pos.y - 20.,
+            12.,
+            WHITE,
+        );
     }
 }

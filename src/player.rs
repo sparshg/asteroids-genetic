@@ -1,7 +1,7 @@
 use std::{f32::consts::PI, f64::consts::TAU};
 
 use macroquad::{prelude::*, rand::gen_range};
-use nalgebra::{max, partial_max};
+use nalgebra::{max, partial_max, partial_min};
 
 use crate::{asteroids::Asteroid, nn::NN};
 #[derive(Default)]
@@ -9,7 +9,7 @@ pub struct Player {
     pub pos: Vec2,
     pub vel: Vec2,
     acc: f32,
-    dir: Vec2,
+    pub dir: Vec2,
     rot: f32,
     drag: f32,
     bullets: Vec<Bullet>,
@@ -36,7 +36,7 @@ impl Player {
             alive: true,
             debug: false,
             shots: 4,
-            raycasts: vec![0.; 8],
+            raycasts: vec![f32::MAX; 3],
             ..Default::default()
         }
     }
@@ -44,39 +44,52 @@ impl Player {
     pub fn simulate(brain: Option<NN>) -> Self {
         let mut p = Player::new();
         if let Some(brain) = brain {
-            assert_eq!(
-                brain.config[0] - 1,
-                8 + 0,
-                "NN input size must match max_asteroids"
-            );
+            // assert_eq!(
+            //     brain.config[0] - 1,
+            //     8 + 5,
+            //     "NN input size must match max_asteroids"
+            // );
             p.brain = Some(brain);
         } else {
-            p.brain = Some(NN::new(vec![8 + 0, 16, 4]));
+            p.brain = Some(NN::new(vec![3, 8, 8, 4]));
         }
         p
     }
 
     pub fn check_player_collision(&mut self, asteroid: &mut Asteroid) -> bool {
-        // self.asteroids_data.extend([
-        //     asteroid.pos.x / screen_width() + 0.5,
-        //     asteroid.pos.y / screen_height() + 0.5,
-        //     asteroid.radius / 50.,
-        // ]);
-        let v = asteroid.pos - self.pos;
-        for i in 0..4 {
-            let dir = Vec2::from_angle(PI / 4. * i as f32).rotate(self.dir);
-            let cross = v.perp_dot(dir);
-            let dot = v.dot(dir);
-            if cross.abs() <= asteroid.radius {
-                self.raycasts[if dot >= 0. { i } else { i + 4 }] = *partial_max(
-                    &self.raycasts[if dot >= 0. { i } else { i + 4 }],
-                    &(1. / (dot.abs()
-                        - (asteroid.radius * asteroid.radius - cross * cross).sqrt())),
-                )
-                .unwrap();
-            }
+        // self.raycasts.extend([
+        if (asteroid.pos).distance_squared(self.pos)
+            < vec2(
+                self.raycasts[0] * screen_width(),
+                self.raycasts[1] * screen_height(),
+            )
+            .distance_squared(self.pos)
+        {
+            self.raycasts[0] = asteroid.pos.x / screen_width();
+            self.raycasts[1] = asteroid.pos.y / screen_height();
+            self.raycasts[2] = asteroid.radius / 50.;
         }
-        if asteroid.check_collision(self.pos, 8.) {
+        // ]);
+        // if self.raycasts[0] > (asteroid.pos - self.pos).length_squared() {
+        //     self.raycasts[0] = (asteroid.pos - self.pos).length_squared();
+        //     self.raycasts[1] = Vec2::angle_between(asteroid.pos - self.pos, self.dir).sin();
+        //     self.raycasts[2] = Vec2::angle_between(asteroid.pos - self.pos, self.dir).cos();
+        // }
+        // let v = asteroid.pos - self.pos;
+        // for i in 0..4 {
+        //     let dir = Vec2::from_angle(PI / 4. * i as f32).rotate(self.dir);
+        //     let cross = v.perp_dot(dir);
+        //     let dot = v.dot(dir);
+        //     if cross.abs() <= asteroid.radius {
+        //         self.raycasts[if dot >= 0. { i } else { i + 4 }] = *partial_max(
+        //             &self.raycasts[if dot >= 0. { i } else { i + 4 }],
+        //             &(1. / (dot.abs()
+        //                 - (asteroid.radius * asteroid.radius - cross * cross).sqrt())),
+        //         )
+        //         .unwrap();
+        //     }
+        // }
+        if asteroid.check_collision(self.pos, 8.) || self.lifespan > 2000 {
             self.alive = false;
             return true;
         }
@@ -99,22 +112,39 @@ impl Player {
         self.last_shot += 1;
         self.acc = 0.;
         let mut keys = vec![false, false, false, false];
-        // self.asteroids_data.resize(self.max_asteroids * 3, 0.);
-        // let mut inputs = vec![
-        //     self.pos.x / screen_width() + 0.5,
-        //     self.pos.y / screen_height() + 0.5,
-        //     self.vel.x / 11.,
-        //     self.vel.y / 11.,
-        //     self.rot / TAU as f32,
-        // ];
-        // inputs.append(self.raycasts.as_mut());
-        let inputs = self.raycasts.clone();
+        let mut inputs = vec![
+            (vec2(
+                self.raycasts[0] * screen_width(),
+                self.raycasts[1] * screen_height(),
+            ) - self.pos)
+                .length()
+                * 0.707
+                / screen_width(),
+            // self.raycasts[0] - self.pos.x / screen_width(),
+            // self.raycasts[1] - self.pos.y / screen_height(),
+            self.dir.angle_between(
+                vec2(
+                    self.raycasts[0] * screen_width(),
+                    self.raycasts[1] * screen_height(),
+                ) - self.pos,
+            ),
+            // self.vel.x / 11.,
+            // self.vel.y / 11.,
+            self.rot, // self.rot.sin(),
+                      // self.rot.cos(),
+        ];
+
+        // self.raycasts.resize(3, 0.);
+        // inputs.append(self.raycasts.clone().as_mut());
+        // println!("inputs: {:?}", inputs);
+
+        // let inputs = self.raycasts.clone();
         // inputs.append(self.asteroids_data.as_mut());
         if let Some(brain) = &self.brain {
-            // println!("{:?}", inputs);
+            // println!("{:?}", brain.feed_forward(inputs.clone()));
+
             keys = brain.feed_forward(inputs).iter().map(|&x| x > 0.).collect();
         }
-        self.raycasts = vec![0.; 8];
         if is_key_down(KeyCode::Right) && self.debug || keys[0] {
             self.rot = (self.rot + 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
@@ -132,8 +162,8 @@ impl Player {
                 self.last_shot = 0;
                 self.shots += 1;
                 self.bullets.push(Bullet {
-                    pos: self.pos + self.dir.rotate(vec2(20., 0.)),
-                    vel: self.dir.rotate(vec2(8.5, 0.)) + self.vel,
+                    pos: self.pos + self.dir * 20.,
+                    vel: self.dir * 8.5 + self.vel,
                     alive: true,
                 });
             }
@@ -158,6 +188,7 @@ impl Player {
         self.bullets.retain(|b| {
             b.alive && b.pos.x.abs() * 2. < screen_width() && b.pos.y.abs() * 2. < screen_height()
         });
+        self.raycasts = vec![100.; 3];
     }
 
     pub fn draw(&self) {
@@ -181,21 +212,34 @@ impl Player {
         }
 
         if self.debug {
-            //     for a in self.asteroids_data.chunks(3) {
-            //         draw_circle_lines(a[0], a[1], a[2], 1., GRAY);
-            //         draw_line(self.pos.x, self.pos.y, a[0], a[1], 1., GRAY)
-            //     }
-            for (i, r) in self.raycasts.iter().enumerate() {
-                let dir = Vec2::from_angle(PI / 4. * i as f32).rotate(self.dir);
-                draw_line(
-                    self.pos.x,
-                    self.pos.y,
-                    self.pos.x + dir.x / r,
-                    self.pos.y + dir.y / r,
+            for a in self.raycasts.chunks(3) {
+                draw_circle_lines(
+                    a[0] * screen_width(),
+                    a[1] * screen_height(),
+                    a[2] * 50.,
                     1.,
                     GRAY,
                 );
+                draw_line(
+                    self.pos.x,
+                    self.pos.y,
+                    a[0] * screen_width(),
+                    a[1] * screen_height(),
+                    1.,
+                    GRAY,
+                )
             }
+            // for (i, r) in self.raycasts.iter().enumerate() {
+            //     let dir = Vec2::from_angle(PI / 4. * i as f32).rotate(self.dir);
+            //     draw_line(
+            //         self.pos.x,
+            //         self.pos.y,
+            //         self.pos.x + dir.x / r,
+            //         self.pos.y + dir.y / r,
+            //         1.,
+            //         GRAY,
+            //     );
+            // }
         }
 
         for bullet in &self.bullets {
