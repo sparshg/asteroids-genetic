@@ -72,7 +72,6 @@ impl Asteroid {
     }
 
     pub fn update(&mut self) {
-        // if self.alive {
         self.pos += self.vel;
         self.rot += self.omega;
         if self.pos.x.abs() > screen_width() * 0.5 + self.radius {
@@ -81,9 +80,6 @@ impl Asteroid {
         if self.pos.y.abs() > screen_height() * 0.5 + self.radius {
             self.pos.y *= -1.;
         }
-        // self.alive = self.pos.y.abs() < screen_height() * 0.51 + self.radius
-        //     && self.pos.x.abs() < screen_width() * 0.51 + self.radius;
-        // }
     }
 
     pub fn draw(&self) {
