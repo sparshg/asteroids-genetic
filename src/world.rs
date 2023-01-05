@@ -20,7 +20,7 @@ impl World {
         Self {
             player: Player::new(),
             max_asteroids: 28,
-            score: 0.,
+            score: 1.,
             ..Default::default()
         }
     }
@@ -29,7 +29,7 @@ impl World {
         Self {
             player: Player::simulate(brain),
             max_asteroids: 28,
-            score: 0.,
+            score: 1.,
             asteroids: vec![
                 Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large),
                 Asteroid::new(AsteroidSize::Large),
@@ -128,6 +128,7 @@ impl World {
         //         AsteroidSize::Small => 1,
         //     }
         // }) < self.max_asteroids
+        //     || self.player.lifespan % 200 == 0
         // {
         if self.player.lifespan % 200 == 0 {
             self.asteroids

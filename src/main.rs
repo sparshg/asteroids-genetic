@@ -27,7 +27,7 @@ async fn main() {
             speedup = !speedup;
         }
         if speedup {
-            for _ in 0..100 {
+            for _ in 0..1000 {
                 pop.update();
             }
         } else {

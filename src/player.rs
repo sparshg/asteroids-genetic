@@ -1,4 +1,4 @@
-use std::{f32::consts::PI, f64::consts::TAU};
+use std::{f32::consts::PI, f64::consts::TAU, iter};
 
 use macroquad::{prelude::*, rand::gen_range};
 use nalgebra::{max, partial_max, partial_min};
@@ -14,6 +14,7 @@ pub struct Player {
     drag: f32,
     bullets: Vec<Bullet>,
     asteroid: Option<Asteroid>,
+    asteroid_data: Vec<(f32, f32, f32)>,
     last_shot: u8,
     shot_interval: u8,
     pub brain: Option<NN>,
@@ -51,30 +52,41 @@ impl Player {
             // );
             p.brain = Some(brain);
         } else {
-            p.brain = Some(NN::new(vec![3, 8, 8, 4]));
+            p.brain = Some(NN::new(vec![4, 8, 8, 4]));
         }
         p
     }
 
     pub fn check_player_collision(&mut self, asteroid: &Asteroid) -> bool {
-        // self.raycasts.extend([
-        if self.asteroid.is_none()
-            || (asteroid.pos).distance_squared(self.pos)
-                < self
-                    .asteroid
-                    .as_ref()
-                    .unwrap()
-                    .pos
-                    .distance_squared(self.pos)
-        {
-            self.asteroid = Some(asteroid.clone());
-        }
-        // ]);
-        // if self.raycasts[0] > (asteroid.pos - self.pos).length_squared() {
-        //     self.raycasts[0] = (asteroid.pos - self.pos).length_squared();
-        //     self.raycasts[1] = Vec2::angle_between(asteroid.pos - self.pos, self.dir).sin();
-        //     self.raycasts[2] = Vec2::angle_between(asteroid.pos - self.pos, self.dir).cos();
+        // let directions = [
+        //     vec2(0., -screen_height()),
+        //     vec2(0., screen_height()),
+        //     vec2(-screen_width(), 0.),
+        //     vec2(screen_width(), 0.),
+        // ];
+        // let mut nearest = asteroid.pos - self.pos;
+        // for dir in directions {
+        //     if (asteroid.pos - self.pos + dir).length_squared() < nearest.length_squared() {
+        //         nearest = asteroid.pos - self.pos + dir;
+        //     }
         // }
+        self.asteroid_data.push((
+            ((asteroid.pos - self.pos).length() - asteroid.radius) / screen_width(),
+            self.dir.angle_between(asteroid.pos - self.pos),
+            (asteroid.vel - self.vel).length(),
+        ));
+        // if self.asteroid.is_none()
+        //     || (asteroid.pos).distance_squared(self.pos)
+        //         < self
+        //             .asteroid
+        //             .as_ref()
+        //             .unwrap()
+        //             .pos
+        //             .distance_squared(self.pos)
+        // {
+        //     self.asteroid = Some(asteroid.clone());
+        // }
+        // ]);
         // let v = asteroid.pos - self.pos;
         // for i in 0..4 {
         //     let dir = Vec2::from_angle(PI / 4. * i as f32).rotate(self.dir);
@@ -89,7 +101,7 @@ impl Player {
         //         .unwrap();
         //     }
         // }
-        if asteroid.check_collision(self.pos, 8.) || self.lifespan > 2000 {
+        if asteroid.check_collision(self.pos, 8.) || self.lifespan > 4000 {
             self.alive = false;
             return true;
         }
@@ -114,21 +126,28 @@ impl Player {
         self.acc = 0.;
         let mut keys = vec![false, false, false, false];
         let mut inputs = vec![
-            (self.asteroid.as_ref().unwrap().pos - self.pos).length() * 0.707 / screen_width(),
-            // self.raycasts[0] - self.pos.x / screen_width(),
-            // self.raycasts[1] - self.pos.y / screen_height(),
-            self.dir
-                .angle_between(self.asteroid.as_ref().unwrap().pos - self.pos),
+            // (self.asteroid.as_ref().unwrap().pos - self.pos).length() / screen_width(),
+            // self.dir
+            //     .angle_between(self.asteroid.as_ref().unwrap().pos - self.pos),
             // self.vel.x / 11.,
             // self.vel.y / 11.,
-            self.rot, // self.rot.sin(),
-                      // self.rot.cos(),
+            self.rot / TAU as f32,
+            // self.rot.sin(),
+            // self.rot.cos(),
         ];
 
-        // self.raycasts.resize(3, 0.);
-        // inputs.append(self.raycasts.clone().as_mut());
-        // println!("inputs: {:?}", inputs);
-
+        self.asteroid_data
+            .sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        self.asteroid_data.resize(1, (0., 0., 0.));
+        inputs.append(
+            &mut self
+                .asteroid_data
+                .iter()
+                .map(|(d, a, h)| vec![*d, *a, *h])
+                .flatten()
+                .collect::<Vec<_>>(),
+        );
+        // println!("{:?}", inputs);
         // let inputs = self.raycasts.clone();
         // inputs.append(self.asteroids_data.as_mut());
         if let Some(brain) = &self.brain {
@@ -179,7 +198,9 @@ impl Player {
         self.bullets.retain(|b| {
             b.alive && b.pos.x.abs() * 2. < screen_width() && b.pos.y.abs() * 2. < screen_height()
         });
+        // self.draw();
         self.asteroid = None;
+        self.asteroid_data.clear();
     }
 
     pub fn draw(&self) {
@@ -201,21 +222,25 @@ impl Player {
         if self.acc > 0. && gen_range(0., 1.) < 0.4 {
             draw_triangle_lines(p6, p7, p8, 2., color);
         }
-        if self.debug && self.asteroid.is_some() {
-            draw_circle_lines(
-                self.asteroid.as_ref().unwrap().pos.x,
-                self.asteroid.as_ref().unwrap().pos.y,
-                self.asteroid.as_ref().unwrap().radius,
-                1.,
-                GRAY,
-            );
+        if self.debug {
+            // if self.asteroid.is_some() {
+            //     draw_circle_lines(
+            //         self.asteroid.as_ref().unwrap().pos.x,
+            //         self.asteroid.as_ref().unwrap().pos.y,
+            //         self.asteroid.as_ref().unwrap().radius,
+            //         1.,
+            //         GRAY,
+            //     );
+            // }
+            let p = self.pos
+                + self.dir.rotate(Vec2::from_angle(self.asteroid_data[0].1))
+                    * self.asteroid_data[0].0
+                    * screen_width();
             draw_line(
-                self.pos.x,
-                self.pos.y,
-                self.asteroid.as_ref().unwrap().pos.x,
-                self.asteroid.as_ref().unwrap().pos.y,
-                1.,
-                GRAY,
+                self.pos.x, self.pos.y,
+                // self.asteroid.as_ref().unwrap().pos.x,
+                // self.asteroid.as_ref().unwrap().pos.y,
+                p.x, p.y, 1., GRAY,
             );
 
             // for (i, r) in self.raycasts.iter().enumerate() {
