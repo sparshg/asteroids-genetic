@@ -13,7 +13,7 @@ pub struct Player {
     rot: f32,
     drag: f32,
     bullets: Vec<Bullet>,
-    raycasts: Vec<f32>,
+    asteroid: Option<Asteroid>,
     last_shot: u8,
     shot_interval: u8,
     pub brain: Option<NN>,
@@ -36,7 +36,7 @@ impl Player {
             alive: true,
             debug: false,
             shots: 4,
-            raycasts: vec![f32::MAX; 3],
+
             ..Default::default()
         }
     }
@@ -56,18 +56,18 @@ impl Player {
         p
     }
 
-    pub fn check_player_collision(&mut self, asteroid: &mut Asteroid) -> bool {
+    pub fn check_player_collision(&mut self, asteroid: &Asteroid) -> bool {
         // self.raycasts.extend([
-        if (asteroid.pos).distance_squared(self.pos)
-            < vec2(
-                self.raycasts[0] * screen_width(),
-                self.raycasts[1] * screen_height(),
-            )
-            .distance_squared(self.pos)
+        if self.asteroid.is_none()
+            || (asteroid.pos).distance_squared(self.pos)
+                < self
+                    .asteroid
+                    .as_ref()
+                    .unwrap()
+                    .pos
+                    .distance_squared(self.pos)
         {
-            self.raycasts[0] = asteroid.pos.x / screen_width();
-            self.raycasts[1] = asteroid.pos.y / screen_height();
-            self.raycasts[2] = asteroid.radius / 50.;
+            self.asteroid = Some(asteroid.clone());
         }
         // ]);
         // if self.raycasts[0] > (asteroid.pos - self.pos).length_squared() {
@@ -101,6 +101,7 @@ impl Player {
             if asteroid.check_collision(bullet.pos, 0.) {
                 asteroid.alive = false;
                 bullet.alive = false;
+                self.asteroid = None;
                 return true;
             }
         }
@@ -113,21 +114,11 @@ impl Player {
         self.acc = 0.;
         let mut keys = vec![false, false, false, false];
         let mut inputs = vec![
-            (vec2(
-                self.raycasts[0] * screen_width(),
-                self.raycasts[1] * screen_height(),
-            ) - self.pos)
-                .length()
-                * 0.707
-                / screen_width(),
+            (self.asteroid.as_ref().unwrap().pos - self.pos).length() * 0.707 / screen_width(),
             // self.raycasts[0] - self.pos.x / screen_width(),
             // self.raycasts[1] - self.pos.y / screen_height(),
-            self.dir.angle_between(
-                vec2(
-                    self.raycasts[0] * screen_width(),
-                    self.raycasts[1] * screen_height(),
-                ) - self.pos,
-            ),
+            self.dir
+                .angle_between(self.asteroid.as_ref().unwrap().pos - self.pos),
             // self.vel.x / 11.,
             // self.vel.y / 11.,
             self.rot, // self.rot.sin(),
@@ -188,7 +179,7 @@ impl Player {
         self.bullets.retain(|b| {
             b.alive && b.pos.x.abs() * 2. < screen_width() && b.pos.y.abs() * 2. < screen_height()
         });
-        self.raycasts = vec![100.; 3];
+        self.asteroid = None;
     }
 
     pub fn draw(&self) {
@@ -196,12 +187,12 @@ impl Player {
             Some(c) => c,
             None => Color::new(1., 1., 1., 0.3),
         };
-        let p1 = self.pos + self.dir.rotate(vec2(20., 0.));
+        let p1 = self.pos + self.dir * 20.;
         let p2 = self.pos + self.dir.rotate(vec2(-18., -12.667));
         let p3 = self.pos + self.dir.rotate(vec2(-18., 12.667));
         let p4 = self.pos + self.dir.rotate(vec2(-10., -10.));
         let p5 = self.pos + self.dir.rotate(vec2(-10., 10.));
-        let p6 = self.pos + self.dir.rotate(vec2(-25., 0.));
+        let p6 = self.pos + self.dir * -25.;
         let p7 = self.pos + self.dir.rotate(vec2(-10., -6.));
         let p8 = self.pos + self.dir.rotate(vec2(-10., 6.));
         draw_line(p1.x, p1.y, p2.x, p2.y, 2., color);
@@ -210,25 +201,23 @@ impl Player {
         if self.acc > 0. && gen_range(0., 1.) < 0.4 {
             draw_triangle_lines(p6, p7, p8, 2., color);
         }
+        if self.debug && self.asteroid.is_some() {
+            draw_circle_lines(
+                self.asteroid.as_ref().unwrap().pos.x,
+                self.asteroid.as_ref().unwrap().pos.y,
+                self.asteroid.as_ref().unwrap().radius,
+                1.,
+                GRAY,
+            );
+            draw_line(
+                self.pos.x,
+                self.pos.y,
+                self.asteroid.as_ref().unwrap().pos.x,
+                self.asteroid.as_ref().unwrap().pos.y,
+                1.,
+                GRAY,
+            );
 
-        if self.debug {
-            for a in self.raycasts.chunks(3) {
-                draw_circle_lines(
-                    a[0] * screen_width(),
-                    a[1] * screen_height(),
-                    a[2] * 50.,
-                    1.,
-                    GRAY,
-                );
-                draw_line(
-                    self.pos.x,
-                    self.pos.y,
-                    a[0] * screen_width(),
-                    a[1] * screen_height(),
-                    1.,
-                    GRAY,
-                )
-            }
             // for (i, r) in self.raycasts.iter().enumerate() {
             //     let dir = Vec2::from_angle(PI / 4. * i as f32).rotate(self.dir);
             //     draw_line(

@@ -1,10 +1,13 @@
 use macroquad::{prelude::*, rand::gen_range};
 
+#[derive(Clone)]
 pub enum AsteroidSize {
     Large,
     Medium,
     Small,
 }
+
+#[derive(Clone)]
 pub struct Asteroid {
     pub pos: Vec2,
     pub vel: Vec2,
@@ -63,7 +66,7 @@ impl Asteroid {
         asteroid
     }
 
-    pub fn check_collision(&mut self, pos: Vec2, rad: f32) -> bool {
+    pub fn check_collision(&self, pos: Vec2, rad: f32) -> bool {
         (pos.x - self.pos.x) * (pos.x - self.pos.x) + (pos.y - self.pos.y) * (pos.y - self.pos.y)
             <= (self.radius + rad) * (self.radius + rad)
     }

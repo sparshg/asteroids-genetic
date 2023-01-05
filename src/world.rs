@@ -63,7 +63,6 @@ impl World {
     // }
 
     pub fn update(&mut self) {
-        self.player.update();
         // if self.player.lifespan > 150 {
         //     self.fitness = 1.
         //         / ((self.player.pos * vec2(2. / screen_width(), 2. / screen_height()))
@@ -77,13 +76,6 @@ impl World {
         let mut to_add: Vec<Asteroid> = Vec::new();
         for asteroid in &mut self.asteroids {
             asteroid.update();
-            if self.player.check_player_collision(asteroid) {
-                self.over = true;
-                self.fitness =
-                    (self.score / self.player.shots as f32).powi(2) * self.player.lifespan as f32;
-
-                // println!("{} {} {}", self.score, self.player.lifespan, self.fitness);
-            }
             if self.player.check_bullet_collisions(asteroid) {
                 self.score += 1.;
                 match asteroid.size {
@@ -117,8 +109,18 @@ impl World {
                 }
             }
         }
+        for asteroid in self.asteroids.iter() {
+            if self.player.check_player_collision(&*asteroid) {
+                self.over = true;
+                self.fitness =
+                    (self.score / self.player.shots as f32).powi(2) * self.player.lifespan as f32;
+
+                // println!("{} {} {}", self.score, self.player.lifespan, self.fitness);
+            }
+        }
         self.asteroids.append(&mut to_add);
         self.asteroids.retain(|asteroid| asteroid.alive);
+        self.player.update();
         // if self.asteroids.iter().fold(0, |acc, x| {
         //     acc + match x.size {
         //         AsteroidSize::Large => 4,
@@ -139,7 +141,10 @@ impl World {
             asteroid.draw();
         }
         draw_text(
-            &format!("{}", (self.score / self.player.shots as f32).powi(2) as f32),
+            &format!(
+                "{}",
+                (self.score / self.player.shots as f32).powi(2) * self.player.lifespan as f32
+            ),
             // 20. - screen_width() * 0.5,
             // 30. - screen_height() * 0.5,
             self.player.pos.x - 20.,
