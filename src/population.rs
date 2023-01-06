@@ -67,6 +67,7 @@ impl Population {
             .map(|i| World::simulate(Some(self.worlds[i].see_brain().to_owned())))
             .collect::<Vec<_>>();
         new_worlds[0].set_best();
+        // new_worlds[0].export_brian();
         while new_worlds.len() < self.size {
             let rands = (gen_range(0., total), gen_range(0., total));
             let mut sum = 0.;

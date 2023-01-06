@@ -2,9 +2,10 @@ use macroquad::rand::gen_range;
 use nalgebra::*;
 use r::Rng;
 use rand_distr::StandardNormal;
+use serde::{Deserialize, Serialize};
 extern crate rand as r;
 
-#[derive(PartialEq, Debug, Clone, Copy, Default)]
+#[derive(PartialEq, Debug, Clone, Copy, Default, Serialize, Deserialize)]
 
 enum ActivationFunc {
     Sigmoid,
@@ -13,10 +14,10 @@ enum ActivationFunc {
     ReLU,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct NN {
     pub config: Vec<usize>,
-    pub weights: Vec<DMatrix<f32>>,
+    weights: Vec<DMatrix<f32>>,
     activ_func: ActivationFunc,
     mut_rate: f32,
 }
@@ -92,5 +93,14 @@ impl NN {
             // println!("y: {}", y);
         }
         y.column(0).data.into_slice().to_vec()
+    }
+
+    pub fn export(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
+
+    pub fn import() -> NN {
+        let json = std::fs::read_to_string("models/brain.json").expect("Unable to read file");
+        serde_json::from_str(&json).unwrap()
     }
 }

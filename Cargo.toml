@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 macroquad = "0.3.24"
-nalgebra = { version = "0.31.1", features = ["rand-no-std", "rand"] }
+nalgebra = { version = "0.31.1", features = ["rand", "serde-serialize"] }
 rand = "0.8.5"
 rand_distr = "0.4.3"
+serde = { version = "1.0.152", features = ["derive"] }
+serde_json = "1.0.91"
