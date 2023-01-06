@@ -1,4 +1,4 @@
-use macroquad::rand::gen_range;
+use macroquad::{prelude::*, rand::gen_range};
 use nalgebra::*;
 use r::Rng;
 use rand_distr::StandardNormal;
@@ -17,7 +17,7 @@ enum ActivationFunc {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct NN {
     pub config: Vec<usize>,
-    weights: Vec<DMatrix<f32>>,
+    pub weights: Vec<DMatrix<f32>>,
     activ_func: ActivationFunc,
     mut_rate: f32,
 }
@@ -45,7 +45,7 @@ impl NN {
                 })
                 .collect(),
 
-            mut_rate: 0.04,
+            mut_rate: 0.05,
             ..Default::default()
         }
     }
@@ -71,8 +71,8 @@ impl NN {
             for ele in weight {
                 if gen_range(0., 1.) < self.mut_rate {
                     // *ele += gen_range(-1., 1.);
-                    *ele = gen_range(-1., 1.);
-                    // *ele = r::thread_rng().sample::<f32, StandardNormal>(StandardNormal);
+                    // *ele = gen_range(-1., 1.);
+                    *ele = r::thread_rng().sample::<f32, StandardNormal>(StandardNormal);
                 }
             }
         }
@@ -93,6 +93,55 @@ impl NN {
             // println!("y: {}", y);
         }
         y.column(0).data.into_slice().to_vec()
+    }
+
+    pub fn draw(&self, width: f32, height: f32) {
+        draw_rectangle_lines(-width * 0.5, -height * 0.5, width, height, 2., WHITE);
+
+        let width = width * 0.8;
+        let height = height * 0.8;
+        let vspace = height / (self.config.iter().max().unwrap() - 1) as f32;
+        let mut p1s: Vec<(f32, f32)> = Vec::new();
+        let mut p2s: Vec<(f32, f32)> = Vec::new();
+        for (i, layer) in self
+            .config
+            .iter()
+            .take(self.config.len() - 1)
+            .map(|x| x - 1)
+            .chain(self.config.last().map(|&x| x))
+            .enumerate()
+        {
+            p1s = p2s;
+            p2s = Vec::new();
+            for neuron in 0..layer {
+                p2s.push((
+                    i as f32 * width / (self.config.len() - 1) as f32 - width * 0.5,
+                    neuron as f32 * vspace - (vspace * (layer - 1) as f32) * 0.5,
+                ));
+            }
+            for (k, j, p1, p2) in p1s
+                .iter()
+                .enumerate()
+                .flat_map(|(k, x)| p2s.iter().enumerate().map(move |(j, y)| (k, j, *x, *y)))
+            {
+                draw_line(
+                    p1.0,
+                    p1.1,
+                    p2.0,
+                    p2.1,
+                    1.,
+                    Color::new(1., 1., 1., (self.weights[i - 1].index((j, k))).abs()),
+                );
+            }
+            for p in &p1s {
+                draw_circle(p.0, p.1, 10., WHITE);
+                draw_circle(p.0, p.1, 9., BLACK);
+            }
+        }
+        for p in &p2s {
+            draw_circle(p.0, p.1, 10., WHITE);
+            draw_circle(p.0, p.1, 9., BLACK);
+        }
     }
 
     pub fn export(&self) -> String {

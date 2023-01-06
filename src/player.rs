@@ -2,7 +2,7 @@ use std::{f32::consts::PI, f64::consts::TAU, iter};
 
 use macroquad::{prelude::*, rand::gen_range};
 
-use crate::{asteroids::Asteroid, nn::NN};
+use crate::{asteroids::Asteroid, nn::NN, HEIGHT, WIDTH};
 #[derive(Default)]
 pub struct Player {
     pub pos: Vec2,
@@ -51,7 +51,7 @@ impl Player {
             // );
             p.brain = Some(brain);
         } else {
-            p.brain = Some(NN::new(vec![4, 8, 8, 4]));
+            p.brain = Some(NN::new(vec![5, 8, 8, 4]));
         }
         p
     }
@@ -60,7 +60,7 @@ impl Player {
         // To give more near asteroids data:
 
         // self.asteroid_data.push((
-        //     ((asteroid.pos - self.pos).length() - asteroid.radius) / screen_width(),
+        //     ((asteroid.pos - self.pos).length() - asteroid.radius) / WIDTH,
         //     self.dir.angle_between(asteroid.pos - self.pos),
         //     (asteroid.vel - self.vel).length(),
         // ));
@@ -120,9 +120,10 @@ impl Player {
         let mut keys = vec![false, false, false, false];
         if let Some(ast) = self.asteroid.as_ref() {
             let inputs = vec![
-                (ast.pos - self.pos).length() / screen_width(),
+                (ast.pos - self.pos).length() / WIDTH,
                 self.dir.angle_between(ast.pos - self.pos),
-                (ast.vel - self.vel).length(),
+                (ast.vel - self.vel).x / 11.,
+                (ast.vel - self.vel).y / 11.,
                 self.rot / TAU as f32,
             ];
 
@@ -174,19 +175,18 @@ impl Player {
 
         self.vel += self.acc * self.dir - self.drag * self.vel.length() * self.vel;
         self.pos += self.vel;
-        if self.pos.x.abs() > screen_width() * 0.5 + 10. {
+        if self.pos.x.abs() > WIDTH * 0.5 + 10. {
             self.pos.x *= -1.;
         }
-        if self.pos.y.abs() > screen_height() * 0.5 + 10. {
+        if self.pos.y.abs() > HEIGHT * 0.5 + 10. {
             self.pos.y *= -1.;
         }
 
         for bullet in &mut self.bullets {
             bullet.update();
         }
-        self.bullets.retain(|b| {
-            b.alive && b.pos.x.abs() * 2. < screen_width() && b.pos.y.abs() * 2. < screen_height()
-        });
+        self.bullets
+            .retain(|b| b.alive && b.pos.x.abs() * 2. < WIDTH && b.pos.y.abs() * 2. < HEIGHT);
         if self.debug {
             self.draw();
         }
@@ -197,6 +197,7 @@ impl Player {
     pub fn draw(&self) {
         let color = match self.color {
             Some(c) => c,
+            // None => WHITE,
             None => Color::new(1., 1., 1., 0.3),
         };
         let p1 = self.pos + self.dir * 20.;
@@ -219,7 +220,7 @@ impl Player {
                 // let p = self.pos
                 //     + self.dir.rotate(Vec2::from_angle(self.asteroid_data[0].1))
                 //         * self.asteroid_data[0].0
-                //         * screen_width();
+                //         * WIDTH;
                 draw_line(self.pos.x, self.pos.y, ast.pos.x, ast.pos.y, 1., GRAY);
             }
 

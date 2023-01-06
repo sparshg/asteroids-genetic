@@ -1,5 +1,5 @@
+use crate::{HEIGHT, WIDTH};
 use macroquad::{prelude::*, rand::gen_range};
-
 #[derive(Clone)]
 pub enum AsteroidSize {
     Large,
@@ -22,9 +22,9 @@ pub struct Asteroid {
 impl Asteroid {
     pub fn new(size: AsteroidSize) -> Self {
         let (sides, radius) = match size {
-            AsteroidSize::Large => (gen_range(6, 10), gen_range(40., 50.)),
-            AsteroidSize::Medium => (gen_range(5, 6), gen_range(30., 40.)),
-            AsteroidSize::Small => (gen_range(3, 5), 20.),
+            AsteroidSize::Large => (gen_range(6, 10), gen_range(50., 65.)),
+            AsteroidSize::Medium => (gen_range(5, 6), gen_range(35., 50.)),
+            AsteroidSize::Small => (gen_range(3, 5), 25.),
         };
         let mut r = vec2(
             if gen_range(0., 1.) > 0.5 { -1. } else { 1. },
@@ -33,10 +33,7 @@ impl Asteroid {
         if gen_range(0., 1.) > 0.5 {
             r = vec2(r.y, r.x);
         }
-        r *= vec2(
-            screen_width() * 0.5 + radius,
-            screen_height() * 0.5 + radius,
-        );
+        r *= vec2(WIDTH * 0.5 + radius, HEIGHT * 0.5 + radius);
         Self {
             pos: r,
             vel: 0.001 * -r
@@ -74,10 +71,10 @@ impl Asteroid {
     pub fn update(&mut self) {
         self.pos += self.vel;
         self.rot += self.omega;
-        if self.pos.x.abs() > screen_width() * 0.5 + self.radius {
+        if self.pos.x.abs() > WIDTH * 0.5 + self.radius {
             self.pos.x *= -1.;
         }
-        if self.pos.y.abs() > screen_height() * 0.5 + self.radius {
+        if self.pos.y.abs() > HEIGHT * 0.5 + self.radius {
             self.pos.y *= -1.;
         }
     }
@@ -94,6 +91,7 @@ impl Asteroid {
                 AsteroidSize::Medium => 1.2,
                 AsteroidSize::Small => 0.8,
             },
+            // WHITE,
             Color::new(1., 1., 1., 0.4),
         );
     }

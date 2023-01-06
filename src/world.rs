@@ -38,7 +38,7 @@ impl World {
         self.player.brain.as_ref().unwrap()
     }
 
-    pub fn export_brian(&self) {
+    pub fn export_brain(&self) {
         let json = self.player.brain.as_ref().unwrap().export();
         std::fs::create_dir_all("models").expect("Unable to create directory");
         std::fs::write("models/brain.json", json).expect("Unable to write file");

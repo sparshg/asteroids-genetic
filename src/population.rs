@@ -1,6 +1,6 @@
 use macroquad::{prelude::*, rand::gen_range};
 
-use crate::{nn::NN, world::World};
+use crate::{nn::NN, world::World, HEIGHT, WIDTH};
 
 #[derive(Default)]
 pub struct Population {
@@ -34,6 +34,9 @@ impl Population {
         if is_key_pressed(KeyCode::Z) {
             self.best = !self.best;
         }
+        if is_key_pressed(KeyCode::Space) {
+            self.worlds[0].export_brain();
+        }
     }
 
     pub fn draw(&self) {
@@ -48,10 +51,29 @@ impl Population {
         }
         draw_text(
             &format!("Gen: {}", self.gen),
-            -150. + screen_width() * 0.5,
-            30. - screen_height() * 0.5,
+            -150. + WIDTH * 0.5,
+            30. - HEIGHT * 0.5,
             32.,
             WHITE,
+        );
+
+        // draw black background outside the screen
+        let th = (screen_height() - HEIGHT) * 0.5;
+        draw_rectangle(-WIDTH * 0.5, -screen_height() * 0.5, WIDTH, th, BLACK);
+        draw_rectangle(-WIDTH * 0.5, screen_height() * 0.5 - th, WIDTH, th, BLACK);
+        draw_rectangle(
+            -WIDTH * 0.5 - th,
+            -screen_height() * 0.5,
+            th,
+            screen_height(),
+            BLACK,
+        );
+        draw_rectangle(
+            WIDTH * 0.5,
+            -screen_height() * 0.5,
+            screen_width() - WIDTH,
+            screen_height(),
+            BLACK,
         );
     }
 
