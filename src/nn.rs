@@ -78,10 +78,10 @@ impl NN {
         }
     }
 
-    pub fn feed_forward(&self, inputs: Vec<f32>) -> Vec<f32> {
+    pub fn feed_forward(&self, inputs: &Vec<f32>) -> Vec<f32> {
         // println!("inputs: {:?}", inputs);
-        let mut y = DMatrix::from_vec(inputs.len(), 1, inputs);
-        for i in 0..self.config.len() - 1 {
+        let mut y = DMatrix::from_vec(inputs.len(), 1, inputs.to_vec());
+        for i in 0..self.config.len() - 2 {
             y = (&self.weights[i] * y.insert_row(self.config[i] - 1, 1.)).map(|x| {
                 match self.activ_func {
                     ActivationFunc::ReLU => x.max(0.),
@@ -89,13 +89,14 @@ impl NN {
                     ActivationFunc::Tanh => x.tanh(),
                 }
             });
-            // println!("w{}: {}", i, self.weights[i]);
-            // println!("y: {}", y);
         }
+        let i = self.config.len() - 2;
+        y = (&self.weights[i] * y.insert_row(self.config[i] - 1, 1.))
+            .map(|x| 1. / (1. + (-x).exp()));
         y.column(0).data.into_slice().to_vec()
     }
 
-    pub fn draw(&self, width: f32, height: f32) {
+    pub fn draw(&self, width: f32, height: f32, inputs: &Vec<f32>) {
         draw_rectangle_lines(-width * 0.5, -height * 0.5, width, height, 2., WHITE);
 
         let width = width * 0.8;
@@ -106,31 +107,34 @@ impl NN {
         for (i, layer) in self
             .config
             .iter()
-            .take(self.config.len() - 1)
-            .map(|x| x - 1)
-            .chain(self.config.last().map(|&x| x))
+            // .take(self.config.len() - 1)
+            // .map(|x| x - 1)
+            // .chain(self.config.last().map(|&x| x))
             .enumerate()
         {
             p1s = p2s;
             p2s = Vec::new();
-            for neuron in 0..layer {
+            for neuron in 0..*layer {
                 p2s.push((
                     i as f32 * width / (self.config.len() - 1) as f32 - width * 0.5,
                     neuron as f32 * vspace - (vspace * (layer - 1) as f32) * 0.5,
                 ));
             }
-            for (k, j, p1, p2) in p1s
-                .iter()
-                .enumerate()
-                .flat_map(|(k, x)| p2s.iter().enumerate().map(move |(j, y)| (k, j, *x, *y)))
-            {
+            for (k, j, p1, p2) in p1s.iter().enumerate().flat_map(|(k, x)| {
+                p2s.iter()
+                    .take(p2s.len() - if i == self.config.len() - 1 { 0 } else { 1 })
+                    .enumerate()
+                    .map(move |(j, y)| (k, j, *x, *y))
+            }) {
+                let weight = *self.weights[i - 1].index((j, k));
+                let c = if weight < 0. { 0. } else { 1. };
                 draw_line(
                     p1.0,
                     p1.1,
                     p2.0,
                     p2.1,
                     1.,
-                    Color::new(1., 1., 1., (self.weights[i - 1].index((j, k))).abs()),
+                    Color::new(1., c, c, weight.abs()),
                 );
             }
             for p in &p1s {
@@ -142,6 +146,10 @@ impl NN {
             draw_circle(p.0, p.1, 10., WHITE);
             draw_circle(p.0, p.1, 9., BLACK);
         }
+        draw_rectangle(width * 0.45, height * 0.45, 10., 10., RED);
+        draw_text("-ve", width * 0.45 + 20., height * 0.45 + 10., 20., WHITE);
+        draw_rectangle(width * 0.45, height * 0.45 + 20., 10., 10., WHITE);
+        draw_text("+ve", width * 0.45 + 20., height * 0.45 + 30., 20., WHITE);
     }
 
     pub fn export(&self) -> String {

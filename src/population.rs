@@ -5,7 +5,7 @@ use crate::{nn::NN, world::World, HEIGHT, WIDTH};
 #[derive(Default)]
 pub struct Population {
     size: usize,
-    gen: i32,
+    pub gen: i32,
     best: bool,
     pub worlds: Vec<World>,
 }
@@ -49,13 +49,13 @@ impl Population {
                 world.draw();
             }
         }
-        draw_text(
-            &format!("Gen: {}", self.gen),
-            -150. + WIDTH * 0.5,
-            30. - HEIGHT * 0.5,
-            32.,
-            WHITE,
-        );
+        // draw_text(
+        //     &format!("Gen: {}", self.gen),
+        //     -150. + WIDTH * 0.5,
+        //     30. - HEIGHT * 0.5,
+        //     32.,
+        //     WHITE,
+        // );
 
         // draw black background outside the screen
         let th = (screen_height() - HEIGHT) * 0.5;
