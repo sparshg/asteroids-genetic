@@ -1,4 +1,4 @@
-use std::{f32::consts::PI, f64::consts::TAU, iter};
+use std::{f32::consts::PI, f64::consts::TAU};
 
 use macroquad::{prelude::*, rand::gen_range};
 

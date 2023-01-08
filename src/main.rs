@@ -29,10 +29,11 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     rand::srand(macroquad::miniquad::date::now() as _);
-    let pause = load_texture("pause.png").await.unwrap();
-    let play = load_texture("play.png").await.unwrap();
-    let fast = load_texture("fast.png").await.unwrap();
-    let restart = load_texture("restart.png").await.unwrap();
+    let pause = load_texture("assets/pause.png").await.unwrap();
+    let play = load_texture("assets/play.png").await.unwrap();
+    let fast = load_texture("assets/fast.png").await.unwrap();
+    let slow = load_texture("assets/slow.png").await.unwrap();
+    let restart = load_texture("assets/restart.png").await.unwrap();
     let th = (screen_height() - HEIGHT) * 0.5;
 
     let gamecam = Camera2D {
@@ -57,10 +58,9 @@ async fn main() {
         ..Default::default()
     };
 
-    let mut speedup = false;
+    let mut speedup = 1;
     let mut paused = false;
     let mut bias = false;
-    let mut showall = false;
     let mut size = 100;
     let mut pop = Population::new(size as usize);
 
@@ -127,20 +127,15 @@ async fn main() {
         clear_background(BLACK);
         set_camera(&gamecam);
         if is_key_pressed(KeyCode::S) {
-            speedup = !speedup;
+            speedup = (speedup * 10) % 9999;
+            println!("Speedup: {}", speedup);
         }
-        if speedup {
-            if !paused {
-                for _ in 0..1000 {
-                    pop.update();
-                }
-            }
-        } else {
-            if !paused {
+        if !paused {
+            for _ in 0..speedup {
                 pop.update();
             }
-            pop.draw();
         }
+        pop.draw();
         draw_rectangle_lines(-WIDTH * 0.5, -HEIGHT * 0.5, WIDTH, HEIGHT, 2., WHITE);
         draw_rectangle_lines(
             WIDTH * 0.5 + th,
@@ -182,9 +177,9 @@ async fn main() {
                     .position(Vec2::new(0., 0.))
                     .ui(ui, |ui| {
                         ui.label(None, &format!("Generation: {}", pop.gen));
-                        ui.same_line(314.);
+                        ui.same_line(242.);
                         if widgets::Button::new("Load Model").ui(ui) {
-                            if let Some(path) = open_file_dialog("Load Model", "brain.json", None) {
+                            if let Some(path) = open_file_dialog("Load Model", "model.json", None) {
                                 let brain = NN::import(&path);
                                 size = 1;
                                 pop = Population::new(1);
@@ -193,13 +188,21 @@ async fn main() {
                         }
                         ui.same_line(0.);
                         if widgets::Button::new("Save Model").ui(ui) {
-                            if let Some(path) = save_file_dialog("Save Model", "brain.json") {
+                            if let Some(path) = save_file_dialog("Save Model", "model.json") {
                                 pop.worlds[0].export_brain(&path);
                             }
                         }
                         ui.same_line(0.);
+                        if widgets::Button::new(slow).ui(ui) {
+                            speedup = std::cmp::max(speedup / 10, 1);
+                        };
+                        ui.same_line(0.);
+                        if widgets::Button::new("1x").ui(ui) {
+                            speedup = 1;
+                        };
+                        ui.same_line(0.);
                         if widgets::Button::new(fast).ui(ui) {
-                            speedup = !speedup;
+                            speedup = std::cmp::min(speedup * 10, 1000);
                         };
                         ui.same_line(0.);
                         if widgets::Button::new(if paused { play } else { pause }).ui(ui) {

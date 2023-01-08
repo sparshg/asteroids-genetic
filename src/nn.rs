@@ -99,7 +99,7 @@ impl NN {
         let width = width * 0.8;
         let height = height * 0.8;
         let vspace = height / (self.config.iter().max().unwrap() - 1) as f32;
-        let mut p1s: Vec<(f32, f32)> = Vec::new();
+        let mut p1s: Vec<(f32, f32)>;
         let mut p2s: Vec<(f32, f32)> = Vec::new();
         for (i, layer) in self
             .config
