@@ -38,10 +38,9 @@ impl World {
         self.player.brain.as_ref().unwrap()
     }
 
-    pub fn export_brain(&self) {
+    pub fn export_brain(&self, path: &str) {
         let json = self.player.brain.as_ref().unwrap().export();
-        std::fs::create_dir_all("models").expect("Unable to create directory");
-        std::fs::write("models/brain.json", json).expect("Unable to write file");
+        std::fs::write(path, json).expect("Unable to write file");
     }
 
     pub fn update(&mut self) {
@@ -110,11 +109,8 @@ impl World {
             asteroid.draw();
         }
         draw_text(
-            &format!(
-                "{}",
-                (self.score / self.player.shots as f32).powi(2) * self.player.lifespan as f32
-            ),
-            self.player.pos.x - 20.,
+            &format!("{:.2}", self.fitness),
+            self.player.pos.x - 22.,
             self.player.pos.y - 20.,
             12.,
             WHITE,

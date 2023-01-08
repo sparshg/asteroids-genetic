@@ -34,9 +34,6 @@ impl Population {
         if is_key_pressed(KeyCode::Z) {
             self.best = !self.best;
         }
-        if is_key_pressed(KeyCode::Space) {
-            self.worlds[0].export_brain();
-        }
     }
 
     pub fn draw(&self) {

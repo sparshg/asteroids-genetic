@@ -194,8 +194,8 @@ impl NN {
         serde_json::to_string(self).unwrap()
     }
 
-    pub fn import() -> NN {
-        let json = std::fs::read_to_string("models/brain.json").expect("Unable to read file");
+    pub fn import(path: &str) -> NN {
+        let json = std::fs::read_to_string(path).expect("Unable to read file");
         serde_json::from_str(&json).unwrap()
     }
 }

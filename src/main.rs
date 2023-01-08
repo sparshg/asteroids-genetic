@@ -4,11 +4,15 @@ mod player;
 mod population;
 mod world;
 
+use nn::NN;
+use tinyfiledialogs::*;
+
 use macroquad::{
     prelude::*,
     ui::{hash, root_ui, widgets, Skin},
 };
 use population::Population;
+use world::World;
 
 pub const WIDTH: f32 = 800.;
 pub const HEIGHT: f32 = 780.;
@@ -179,9 +183,20 @@ async fn main() {
                     .ui(ui, |ui| {
                         ui.label(None, &format!("Generation: {}", pop.gen));
                         ui.same_line(314.);
-                        widgets::Button::new("Load Model").ui(ui);
+                        if widgets::Button::new("Load Model").ui(ui) {
+                            if let Some(path) = open_file_dialog("Load Model", "brain.json", None) {
+                                let brain = NN::import(&path);
+                                size = 1;
+                                pop = Population::new(1);
+                                pop.worlds[0] = World::simulate(Some(brain));
+                            }
+                        }
                         ui.same_line(0.);
-                        widgets::Button::new("Save Model").ui(ui);
+                        if widgets::Button::new("Save Model").ui(ui) {
+                            if let Some(path) = save_file_dialog("Save Model", "brain.json") {
+                                pop.worlds[0].export_brain(&path);
+                            }
+                        }
                         ui.same_line(0.);
                         if widgets::Button::new(fast).ui(ui) {
                             speedup = !speedup;
@@ -198,7 +213,7 @@ async fn main() {
                         widgets::Group::new(hash!(), Vec2::new(100., ui_thick))
                             .position(Vec2::new(140., 0.))
                             .ui(ui, |ui| {
-                                ui.drag(hash!(), "", Some((2, 500)), &mut size);
+                                ui.drag(hash!(), "", Some((1, 500)), &mut size);
                             });
                         ui.same_line(307.);
                         widgets::Button::new("Debug").ui(ui);
