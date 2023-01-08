@@ -6,7 +6,7 @@ use crate::{nn::NN, world::World, HEIGHT, WIDTH};
 pub struct Population {
     size: usize,
     pub gen: i32,
-    best: bool,
+    pub best: bool,
     pub worlds: Vec<World>,
 }
 
@@ -85,7 +85,7 @@ impl Population {
             println!("Fitness: {}", i.fitness);
         }
         println!("Gen: {}, Fitness: {}", self.gen, self.worlds[0].fitness);
-        let mut new_worlds = (0..self.size / 20)
+        let mut new_worlds = (0..std::cmp::max(1, self.size / 20))
             .map(|i| World::simulate(Some(self.worlds[i].see_brain().to_owned())))
             .collect::<Vec<_>>();
         new_worlds[0].set_best();

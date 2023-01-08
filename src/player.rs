@@ -14,7 +14,7 @@ pub struct Player {
     bullets: Vec<Bullet>,
     asteroid: Option<Asteroid>,
     inputs: Vec<f32>,
-    outputs: Vec<bool>,
+    pub outputs: Vec<f32>,
     // asteroid_data: Vec<(f32, f32, f32)>,
     last_shot: u8,
     shot_interval: u8,
@@ -38,7 +38,7 @@ impl Player {
             alive: true,
             debug: false,
             shots: 4,
-            outputs: vec![false; 4],
+            outputs: vec![0.; 4],
 
             ..Default::default()
         }
@@ -120,13 +120,13 @@ impl Player {
         self.lifespan += 1;
         self.last_shot += 1;
         self.acc = 0.;
-        self.outputs = vec![false; 4];
+        self.outputs = vec![0.; 4];
         if let Some(ast) = self.asteroid.as_ref() {
             self.inputs = vec![
-                (ast.pos - self.pos).length() / WIDTH,
+                (ast.pos - self.pos).length() / HEIGHT,
                 self.dir.angle_between(ast.pos - self.pos),
-                (ast.vel - self.vel).x / 11.,
-                (ast.vel - self.vel).y / 11.,
+                (ast.vel - self.vel).x * 0.6,
+                (ast.vel - self.vel).y * 0.6,
                 self.rot / TAU as f32,
             ];
 
@@ -143,25 +143,22 @@ impl Player {
             // );
 
             if let Some(brain) = &self.brain {
-                self.outputs = brain
-                    .feed_forward(&self.inputs)
-                    .iter()
-                    .map(|&x| x > 0.85)
-                    .collect();
+                self.outputs = brain.feed_forward(&self.inputs);
             }
         }
-        if is_key_down(KeyCode::Right) && self.debug || self.outputs[0] {
+        let keys: Vec<bool> = self.outputs.iter().map(|&x| x > 0.).collect();
+        if is_key_down(KeyCode::Right) && self.debug || keys[0] {
             self.rot = (self.rot + 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Left) && self.debug || self.outputs[1] {
+        if is_key_down(KeyCode::Left) && self.debug || keys[1] {
             self.rot = (self.rot - 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Up) && self.debug || self.outputs[2] {
+        if is_key_down(KeyCode::Up) && self.debug || keys[2] {
             self.acc = 0.14;
         }
-        if is_key_down(KeyCode::Space) && self.debug || self.outputs[3] {
+        if is_key_down(KeyCode::Space) && self.debug || keys[3] {
             if self.last_shot > self.shot_interval {
                 self.last_shot = 0;
                 self.shots += 1;
@@ -251,9 +248,9 @@ impl Player {
         }
     }
 
-    pub fn draw_brain(&self, width: f32, height: f32) {
+    pub fn draw_brain(&self, width: f32, height: f32, bias: bool) {
         if let Some(brain) = &self.brain {
-            brain.draw(width, height, &self.inputs);
+            brain.draw(width, height, &self.inputs, &self.outputs, bias);
         }
     }
 }

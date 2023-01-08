@@ -4,8 +4,6 @@ mod player;
 mod population;
 mod world;
 
-use std::borrow::BorrowMut;
-
 use macroquad::{
     prelude::*,
     ui::{hash, root_ui, widgets, Skin},
@@ -38,7 +36,7 @@ async fn main() {
         offset: vec2((2. * th + WIDTH) / screen_width() - 1., 0.),
         ..Default::default()
     };
-    let maincam = Camera2D {
+    let netcam = Camera2D {
         zoom: vec2(2. / screen_width(), -2. / screen_height()),
         offset: vec2(
             (th + WIDTH) / screen_width(),
@@ -46,25 +44,23 @@ async fn main() {
         ),
         ..Default::default()
     };
-    // let mut cam = Camera2D::from_display_rect(Rect {
-    //     x: 0.,
-    //     y: 0.,
-    //     w: 1600.,
-    //     h: 1200.,
-    // });
-    // cam.offset = vec2(1., -1.);
-    // // {
-    //     zoom: vec2(2. / 800., -2. / 600.),
-    //     // offset: vec2(-19. / 60., 0.),
-    //     ..Default::default()
-    // };
-    let mut pop = Population::new(100);
+    let statcam = Camera2D {
+        zoom: vec2(2. / screen_width(), -2. / screen_height()),
+        offset: vec2(
+            (th + WIDTH) / screen_width(),
+            ((th + HEIGHT) * 0.5) / screen_height(),
+        ),
+        ..Default::default()
+    };
+
     let mut speedup = false;
     let mut paused = false;
-    let mut checkbox = false;
-    let mut combobox = 0;
-    let mut text = String::new();
-    let mut number = 0.0;
+    let mut bias = false;
+    let mut showall = false;
+    let mut size = 100;
+    let mut pop = Population::new(size as usize);
+
+    let ui_thick = 34.;
 
     let skin = {
         let boxed = root_ui()
@@ -88,6 +84,7 @@ async fn main() {
                 bytes: vec![0; 4],
             })
             .background_margin(RectOffset::new(0., 0., 0., 0.))
+            .color_inactive(WHITE)
             .build();
         let button_style = boxed
             .color_hovered(RED)
@@ -96,18 +93,26 @@ async fn main() {
             .text_color_hovered(WHITE)
             .text_color_clicked(WHITE)
             .margin(RectOffset::new(10., 10., 8., 8.))
+            .color_inactive(WHITE)
             .build();
         let label_style = root_ui()
             .style_builder()
             .text_color(WHITE)
             .font_size(24)
             .margin(RectOffset::new(5., 5., 4., 4.))
+            .color_inactive(WHITE)
+            .build();
+        let group_style = root_ui()
+            .style_builder()
+            .color(Color::new(0., 0., 0., 0.))
             .build();
 
         Skin {
             window_style,
             button_style,
             label_style,
+            group_style,
+
             margin: 0.,
             ..root_ui().default_skin()
         }
@@ -116,6 +121,7 @@ async fn main() {
     root_ui().push_skin(&skin);
     loop {
         clear_background(BLACK);
+        set_camera(&gamecam);
         if is_key_pressed(KeyCode::S) {
             speedup = !speedup;
         }
@@ -136,89 +142,82 @@ async fn main() {
             WIDTH * 0.5 + th,
             -HEIGHT * 0.5,
             screen_width() - WIDTH - 3. * th,
-            34.,
+            ui_thick,
             2.,
             WHITE,
         );
         draw_rectangle_lines(
             WIDTH * 0.5 + th,
-            -HEIGHT * 0.5 + (screen_height() - 3. * th) * 0.5 - 34.,
+            -HEIGHT * 0.5 + (screen_height() - 3. * th) * 0.5 - ui_thick,
             screen_width() - WIDTH - 3. * th,
-            34.,
+            ui_thick,
             2.,
             WHITE,
         );
 
-        set_camera(&maincam);
-        // draw_circle(0., 0., 20., RED);
+        set_camera(&netcam);
         pop.worlds[0].player.draw_brain(
             screen_width() - WIDTH - 3. * th,
             (screen_height() - 3. * th) * 0.5,
+            bias,
+        );
+        set_camera(&statcam);
+        pop.worlds[0].draw_stats(
+            screen_width() - WIDTH - 3. * th,
+            (screen_height() - 7. * th) * 0.5 - 2. * ui_thick,
         );
 
-        set_camera(&gamecam);
+        let ui_width = screen_width() - WIDTH - 3. * th + 1.;
+        let ui_height = (screen_height() - 3. * th) * 0.5;
         root_ui().window(
             hash!(),
             vec2(WIDTH + 2. * th, th),
-            vec2(screen_width() - WIDTH - 3. * th + 1., 34.),
+            vec2(ui_width, ui_height),
             |ui| {
-                ui.label(None, &format!("Generation: {}", pop.gen));
-                ui.same_line(278.);
-                widgets::Button::new("Load Model").ui(ui);
-                ui.same_line(0.);
-                widgets::Button::new("Save Model").ui(ui);
-                ui.same_line(0.);
-                if widgets::Button::new(fast).ui(ui) {
-                    speedup = !speedup;
-                };
-                ui.same_line(0.);
-                if widgets::Button::new(restart).ui(ui) {
-                    pop = Population::new(100);
-                };
-                ui.same_line(0.);
-                if widgets::Button::new(if paused { play } else { pause }).ui(ui) {
-                    paused = !paused;
-                };
+                widgets::Group::new(hash!(), Vec2::new(ui_width, ui_thick))
+                    .position(Vec2::new(0., 0.))
+                    .ui(ui, |ui| {
+                        ui.label(None, &format!("Generation: {}", pop.gen));
+                        ui.same_line(314.);
+                        widgets::Button::new("Load Model").ui(ui);
+                        ui.same_line(0.);
+                        widgets::Button::new("Save Model").ui(ui);
+                        ui.same_line(0.);
+                        if widgets::Button::new(fast).ui(ui) {
+                            speedup = !speedup;
+                        };
+                        ui.same_line(0.);
+                        if widgets::Button::new(if paused { play } else { pause }).ui(ui) {
+                            paused = !paused;
+                        };
+                    });
+                widgets::Group::new(hash!(), Vec2::new(ui_width, ui_thick))
+                    .position(Vec2::new(0., ui_height - ui_thick))
+                    .ui(ui, |ui| {
+                        ui.label(Some(vec2(0., 2.)), "«Population»");
+                        widgets::Group::new(hash!(), Vec2::new(100., ui_thick))
+                            .position(Vec2::new(140., 0.))
+                            .ui(ui, |ui| {
+                                ui.drag(hash!(), "", Some((2, 500)), &mut size);
+                            });
+                        ui.same_line(364.);
+                        if widgets::Button::new(if bias { "Hide Bias" } else { "Show Bias" }).ui(ui)
+                        {
+                            bias = !bias;
+                        };
+                        ui.same_line(0.);
+                        if widgets::Button::new(if !pop.best { "Show Best" } else { "Show All " })
+                            .ui(ui)
+                        {
+                            pop.best = !pop.best;
+                        };
+                        ui.same_line(0.);
+                        if widgets::Button::new(restart).ui(ui) {
+                            pop = Population::new(size as usize);
+                        };
+                    });
             },
         );
-        root_ui().window(
-            hash!(),
-            vec2(WIDTH + 2. * th, (screen_height() - th) * 0.5 - 34.),
-            vec2(screen_width() - WIDTH - 3. * th + 1., 34.),
-            |ui| {
-                ui.label(None, &format!("Generation: {}", pop.gen));
-                ui.same_line(278.);
-                widgets::Button::new("Load Model").ui(ui);
-                ui.same_line(0.);
-                widgets::Button::new("Save Model").ui(ui);
-                ui.same_line(0.);
-                if widgets::Button::new(fast).ui(ui) {
-                    speedup = !speedup;
-                };
-                ui.same_line(0.);
-                if widgets::Button::new(restart).ui(ui) {
-                    pop = Population::new(100);
-                };
-                ui.same_line(0.);
-                if widgets::Button::new(if paused { play } else { pause }).ui(ui) {
-                    paused = !paused;
-                };
-            },
-        );
-
-        // set_camera(&maincam);
-        // draw_texture_ex(
-        //     target.texture,
-        //     0.,
-        //     0.,
-        //     Color::new(1., 1., 1., 0.3),
-        //     DrawTextureParams {
-        //         flip_y: true,
-        //         ..Default::default()
-        //     },
-        // );
-        // set_camera(&cam);
-
         next_frame().await;
     }
 }
