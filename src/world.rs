@@ -163,21 +163,28 @@ impl World {
         draw_text(
             if self.over { "DEAD" } else { "ALIVE" },
             -width * 0.5 + 20.,
-            75.,
+            70.,
             24.,
             if self.over { RED } else { GREEN },
         );
         draw_text(
-            &format!("Score: {}", self.score),
+            &format!("Hits: {}", self.score),
             -width * 0.5 + 20.,
-            100.,
+            90.,
+            24.,
+            WHITE,
+        );
+        draw_text(
+            &format!("Fired: {}", self.player.shots),
+            -width * 0.5 + 20.,
+            110.,
             24.,
             WHITE,
         );
         draw_text(
             &format!("Fitness: {:.2}", self.fitness),
             -width * 0.5 + 20.,
-            125.,
+            130.,
             24.,
             WHITE,
         );

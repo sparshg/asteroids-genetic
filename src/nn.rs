@@ -159,6 +159,15 @@ impl NN {
                         BLACK
                     },
                 );
+                if i == 1 && inputs.len() > 1 {
+                    draw_text(
+                        &format!("{:.2}", inputs[j]),
+                        p.0 - if inputs[j] < 0. { 50. } else { 42. },
+                        p.1 + 4.,
+                        16.,
+                        WHITE,
+                    );
+                }
             }
         }
         for (j, p) in p2s.iter().enumerate() {
@@ -166,6 +175,13 @@ impl NN {
             draw_circle(p.0, p.1, 8., BLACK);
             if !outputs.is_empty() {
                 draw_circle(p.0, p.1, 8., Color::new(1., 1., 1., outputs[j]));
+                draw_text(
+                    &format!("{:.2}", outputs[j]),
+                    p.0 + 14.,
+                    p.1 + 4.,
+                    16.,
+                    WHITE,
+                );
             }
         }
         draw_rectangle(width * 0.45, height * 0.45, 10., 10., RED);

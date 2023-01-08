@@ -200,7 +200,9 @@ async fn main() {
                             .ui(ui, |ui| {
                                 ui.drag(hash!(), "", Some((2, 500)), &mut size);
                             });
-                        ui.same_line(364.);
+                        ui.same_line(307.);
+                        widgets::Button::new("Debug").ui(ui);
+                        ui.same_line(0.);
                         if widgets::Button::new(if bias { "Hide Bias" } else { "Show Bias" }).ui(ui)
                         {
                             bias = !bias;
