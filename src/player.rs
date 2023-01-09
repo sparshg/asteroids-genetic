@@ -19,7 +19,6 @@ pub struct Player {
     last_shot: u8,
     shot_interval: u8,
     pub brain: Option<NN>,
-    debug: bool,
     alive: bool,
     pub color: Option<Color>,
     pub lifespan: u32,
@@ -36,7 +35,6 @@ impl Player {
             drag: 0.001,
             shot_interval: 18,
             alive: true,
-            debug: false,
             shots: 4,
             outputs: vec![0.; 4],
 
@@ -147,18 +145,21 @@ impl Player {
             }
         }
         let keys: Vec<bool> = self.outputs.iter().map(|&x| x > 0.).collect();
-        if is_key_down(KeyCode::Right) && self.debug || keys[0] {
+        if keys[0] {
+            // RIGHT
             self.rot = (self.rot + 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Left) && self.debug || keys[1] {
+        if keys[1] {
+            // LEFT
             self.rot = (self.rot - 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Up) && self.debug || keys[2] {
+        if is_key_down(KeyCode::Up) || keys[2] {
+            // THROTTLE
             self.acc = 0.14;
         }
-        if is_key_down(KeyCode::Space) && self.debug || keys[3] {
+        if is_key_down(KeyCode::Space) || keys[3] {
             if self.last_shot > self.shot_interval {
                 self.last_shot = 0;
                 self.shots += 1;
@@ -170,12 +171,12 @@ impl Player {
             }
         }
 
-        if is_key_pressed(KeyCode::D) {
-            self.debug = !self.debug;
-        }
-        if is_key_pressed(KeyCode::S) {
-            self.debug = false;
-        }
+        // if is_key_pressed(KeyCode::D) {
+        //     self.debug = !self.debug;
+        // }
+        // if is_key_pressed(KeyCode::S) {
+        //     self.debug = false;
+        // }
 
         self.vel += self.acc * self.dir - self.drag * self.vel.length() * self.vel;
         self.pos += self.vel;
@@ -191,14 +192,11 @@ impl Player {
         }
         self.bullets
             .retain(|b| b.alive && b.pos.x.abs() * 2. < WIDTH && b.pos.y.abs() * 2. < HEIGHT);
-        if self.debug {
-            self.draw();
-        }
         self.asteroid = None;
         // self.asteroid_data.clear();
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&self, debug: bool) {
         let color = match self.color {
             Some(c) => c,
             // None => WHITE,
@@ -218,14 +216,14 @@ impl Player {
         if self.acc > 0. && gen_range(0., 1.) < 0.4 {
             draw_triangle_lines(p6, p7, p8, 2., color);
         }
-        if self.debug {
+        if debug {
             if let Some(ast) = self.asteroid.as_ref() {
-                draw_circle_lines(ast.pos.x, ast.pos.y, ast.radius, 1., GRAY);
+                draw_circle_lines(ast.pos.x, ast.pos.y, ast.radius, 1., DARKBLUE);
                 // let p = self.pos
                 //     + self.dir.rotate(Vec2::from_angle(self.asteroid_data[0].1))
                 //         * self.asteroid_data[0].0
                 //         * WIDTH;
-                draw_line(self.pos.x, self.pos.y, ast.pos.x, ast.pos.y, 1., GRAY);
+                draw_line(self.pos.x, self.pos.y, ast.pos.x, ast.pos.y, 1., DARKBLUE);
             }
 
             // Draw raycasts
@@ -244,7 +242,7 @@ impl Player {
         }
 
         for bullet in &self.bullets {
-            bullet.draw();
+            bullet.draw(color);
         }
     }
 
@@ -265,7 +263,7 @@ impl Bullet {
     fn update(&mut self) {
         self.pos += self.vel;
     }
-    fn draw(&self) {
-        draw_circle(self.pos.x, self.pos.y, 2., WHITE);
+    fn draw(&self, color: Color) {
+        draw_circle(self.pos.x, self.pos.y, 2., color);
     }
 }

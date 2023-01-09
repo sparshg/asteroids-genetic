@@ -6,7 +6,8 @@ use crate::{nn::NN, world::World, HEIGHT, WIDTH};
 pub struct Population {
     size: usize,
     pub gen: i32,
-    pub best: bool,
+    pub focus: bool,
+    pub debug: bool,
     pub worlds: Vec<World>,
 }
 
@@ -32,27 +33,23 @@ impl Population {
             self.next_gen();
         }
         if is_key_pressed(KeyCode::Z) {
-            self.best = !self.best;
+            self.focus = !self.focus;
+        }
+        if is_key_pressed(KeyCode::D) {
+            self.debug = !self.debug;
         }
     }
 
     pub fn draw(&self) {
         for world in self.worlds.iter().rev() {
-            if self.best {
-                if world.player.color.is_some() {
-                    world.draw();
+            if self.focus {
+                if world.track {
+                    world.draw(self.debug);
                 }
             } else if !world.over {
-                world.draw();
+                world.draw(self.debug);
             }
         }
-        // draw_text(
-        //     &format!("Gen: {}", self.gen),
-        //     -150. + WIDTH * 0.5,
-        //     30. - HEIGHT * 0.5,
-        //     32.,
-        //     WHITE,
-        // );
 
         // draw black background outside the screen
         let th = (screen_height() - HEIGHT) * 0.5;
@@ -85,8 +82,7 @@ impl Population {
         let mut new_worlds = (0..std::cmp::max(1, self.size / 20))
             .map(|i| World::simulate(Some(self.worlds[i].see_brain().to_owned())))
             .collect::<Vec<_>>();
-        new_worlds[0].set_best();
-        // new_worlds[0].export_brian();
+        new_worlds[0].track(true);
         while new_worlds.len() < self.size {
             let rands = (gen_range(0., total), gen_range(0., total));
             let mut sum = 0.;

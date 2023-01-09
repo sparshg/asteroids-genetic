@@ -128,7 +128,9 @@ async fn main() {
         set_camera(&gamecam);
         if is_key_pressed(KeyCode::S) {
             speedup = (speedup * 10) % 9999;
-            println!("Speedup: {}", speedup);
+        }
+        if is_key_pressed(KeyCode::P) {
+            paused = !paused;
         }
         if !paused {
             for _ in 0..speedup {
@@ -165,6 +167,20 @@ async fn main() {
             screen_width() - WIDTH - 3. * th,
             (screen_height() - 7. * th) * 0.5 - 2. * ui_thick,
         );
+        if is_mouse_button_pressed(MouseButton::Left) && mouse_position().0 < WIDTH + th {
+            let (x, y) = mouse_position();
+            for i in 0..pop.worlds.len() {
+                if (pop.worlds[i].player.pos - vec2(x - th - WIDTH * 0.5, y - th - HEIGHT * 0.5))
+                    .length_squared()
+                    < 256.
+                {
+                    pop.worlds.swap(0, i);
+                    pop.worlds[0].track(true);
+                    pop.worlds[i].track(false);
+                    break;
+                }
+            }
+        }
 
         let ui_width = screen_width() - WIDTH - 3. * th + 1.;
         let ui_height = (screen_height() - 3. * th) * 0.5;
@@ -216,20 +232,22 @@ async fn main() {
                         widgets::Group::new(hash!(), Vec2::new(100., ui_thick))
                             .position(Vec2::new(140., 0.))
                             .ui(ui, |ui| {
-                                ui.drag(hash!(), "", Some((1, 500)), &mut size);
+                                ui.drag(hash!(), "", Some((1, 300)), &mut size);
                             });
                         ui.same_line(307.);
-                        widgets::Button::new("Debug").ui(ui);
+                        if widgets::Button::new("Debug").ui(ui) {
+                            pop.debug = !pop.debug;
+                        };
                         ui.same_line(0.);
                         if widgets::Button::new(if bias { "Hide Bias" } else { "Show Bias" }).ui(ui)
                         {
                             bias = !bias;
                         };
                         ui.same_line(0.);
-                        if widgets::Button::new(if !pop.best { "Show Best" } else { "Show All " })
+                        if widgets::Button::new(if !pop.focus { "Show Best" } else { "Show All " })
                             .ui(ui)
                         {
-                            pop.best = !pop.best;
+                            pop.focus = !pop.focus;
                         };
                         ui.same_line(0.);
                         if widgets::Button::new(restart).ui(ui) {

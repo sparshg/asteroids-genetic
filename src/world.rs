@@ -12,6 +12,7 @@ pub struct World {
     pub score: f32,
     pub over: bool,
     pub fitness: f32,
+    pub track: bool,
 }
 
 impl World {
@@ -30,8 +31,15 @@ impl World {
         }
     }
 
-    pub fn set_best(&mut self) {
-        self.player.color = Some(RED);
+    pub fn track(&mut self, track: bool) {
+        self.player.color = if track { Some(RED) } else { None };
+        for asteroid in &mut self.asteroids {
+            asteroid.color = if track {
+                Color::new(1., 0., 0., 0.8)
+            } else {
+                Color::new(1., 1., 1., 0.2)
+            };
+        }
     }
 
     pub fn see_brain(&self) -> &NN {
@@ -44,6 +52,7 @@ impl World {
     }
 
     pub fn update(&mut self) {
+        self.player.update();
         let mut to_add: Vec<Asteroid> = Vec::new();
         for asteroid in &mut self.asteroids {
             asteroid.update();
@@ -85,7 +94,6 @@ impl World {
         }
         self.fitness =
             (self.score / self.player.shots as f32).powi(2) * self.player.lifespan as f32;
-        self.player.update();
         self.asteroids.append(&mut to_add);
         self.asteroids.retain(|asteroid| asteroid.alive);
         // if self.asteroids.iter().fold(0, |acc, x| {
@@ -103,8 +111,8 @@ impl World {
         }
     }
 
-    pub fn draw(&self) {
-        self.player.draw();
+    pub fn draw(&self, debug: bool) {
+        self.player.draw(debug);
         for asteroid in &self.asteroids {
             asteroid.draw();
         }
@@ -156,33 +164,38 @@ impl World {
             draw_circle(l1.x, l1.y, 5., WHITE);
             draw_circle(l1.x, l1.y, 3.5, BLACK);
         }
-        draw_text(
+        let params = TextParams {
+            font_size: 48,
+            font_scale: 0.5,
+            ..Default::default()
+        };
+        draw_text_ex(
             if self.over { "DEAD" } else { "ALIVE" },
             -width * 0.5 + 20.,
             70.,
-            24.,
-            if self.over { RED } else { GREEN },
+            {
+                let mut p = params.clone();
+                p.color = if self.over { RED } else { GREEN };
+                p
+            },
         );
-        draw_text(
+        draw_text_ex(
             &format!("Hits: {}", self.score),
             -width * 0.5 + 20.,
             90.,
-            24.,
-            WHITE,
+            params,
         );
-        draw_text(
+        draw_text_ex(
             &format!("Fired: {}", self.player.shots),
             -width * 0.5 + 20.,
             110.,
-            24.,
-            WHITE,
+            params,
         );
-        draw_text(
+        draw_text_ex(
             &format!("Fitness: {:.2}", self.fitness),
             -width * 0.5 + 20.,
             130.,
-            24.,
-            WHITE,
+            params,
         );
     }
 }

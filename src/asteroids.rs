@@ -17,6 +17,7 @@ pub struct Asteroid {
     rot: f32,
     omega: f32,
     pub alive: bool,
+    pub color: Color,
 }
 
 impl Asteroid {
@@ -47,6 +48,7 @@ impl Asteroid {
             omega: gen_range(0.8, 3.5) * if gen_range(0., 1.) > 0.5 { -1. } else { 1. },
             rot: 0.,
             alive: true,
+            color: Color::new(1., 1., 1., 0.2),
         }
     }
 
@@ -91,8 +93,7 @@ impl Asteroid {
                 AsteroidSize::Medium => 1.2,
                 AsteroidSize::Small => 0.8,
             },
-            // WHITE,
-            Color::new(1., 1., 1., 0.4),
+            self.color,
         );
     }
 }
