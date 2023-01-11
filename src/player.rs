@@ -25,8 +25,17 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new() -> Self {
+    pub fn new(config: Option<Vec<usize>>, mut_rate: Option<f32>) -> Self {
         Self {
+            brain: match config {
+                Some(mut c) => {
+                    c.retain(|&x| x != 0);
+                    c.insert(0, 5);
+                    c.push(4);
+                    Some(NN::new(c, mut_rate.unwrap()))
+                }
+                _ => None,
+            },
             dir: vec2(0., -1.),
             rot: 1.5 * PI,
 
@@ -39,21 +48,6 @@ impl Player {
 
             ..Default::default()
         }
-    }
-
-    pub fn simulate(brain: Option<NN>) -> Self {
-        let mut p = Player::new();
-        if let Some(brain) = brain {
-            // assert_eq!(
-            //     brain.config[0] - 1,
-            //     8 + 5,
-            //     "NN input size must match max_asteroids"
-            // );
-            p.brain = Some(brain);
-        } else {
-            p.brain = Some(NN::new(vec![5, 6, 6, 4]));
-        }
-        p
     }
 
     pub fn check_player_collision(&mut self, asteroid: &Asteroid) -> bool {

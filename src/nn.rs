@@ -7,7 +7,7 @@ extern crate rand as r;
 
 #[derive(PartialEq, Debug, Clone, Copy, Default, Serialize, Deserialize)]
 
-enum ActivationFunc {
+pub enum ActivationFunc {
     Sigmoid,
     Tanh,
     #[default]
@@ -18,13 +18,13 @@ enum ActivationFunc {
 pub struct NN {
     pub config: Vec<usize>,
     pub weights: Vec<DMatrix<f32>>,
-    activ_func: ActivationFunc,
-    mut_rate: f32,
+    pub activ_func: ActivationFunc,
+    pub mut_rate: f32,
 }
 
 impl NN {
     // Vec of number of neurons in input, hidden 1, hidden 2, ..., output layers
-    pub fn new(config: Vec<usize>) -> Self {
+    pub fn new(config: Vec<usize>, mut_rate: f32) -> Self {
         let mut rng = r::thread_rng();
 
         Self {
@@ -45,7 +45,7 @@ impl NN {
                 })
                 .collect(),
 
-            mut_rate: 0.05,
+            mut_rate,
             ..Default::default()
         }
     }

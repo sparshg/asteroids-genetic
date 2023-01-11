@@ -17,9 +17,9 @@ pub struct World {
 }
 
 impl World {
-    pub fn simulate(brain: Option<NN>) -> Self {
+    pub fn new(hlayers: Option<Vec<usize>>, mut_rate: Option<f32>) -> Self {
         Self {
-            player: Player::simulate(brain),
+            player: Player::new(hlayers, mut_rate),
             score: 1.,
             asteroids: vec![
                 Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large),
@@ -31,6 +31,11 @@ impl World {
             color: Color::new(1., 1., 1., 0.4),
             ..Default::default()
         }
+    }
+    pub fn simulate(brain: NN) -> Self {
+        let mut w = World::new(None, None);
+        w.player.brain = Some(brain);
+        w
     }
 
     pub fn track(&mut self, track: bool) {

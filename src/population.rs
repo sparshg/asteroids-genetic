@@ -10,13 +10,17 @@ pub struct Population {
     pub debug: bool,
     pub worlds: Vec<World>,
     pub track: usize,
+    pub hlayers: Vec<usize>,
 }
 
 impl Population {
-    pub fn new(size: usize) -> Self {
+    pub fn new(size: usize, hlayers: Vec<usize>, mut_rate: f32) -> Self {
         Self {
             size,
-            worlds: (0..size).map(|_| World::simulate(None)).collect(),
+            hlayers: hlayers.clone(),
+            worlds: (0..size)
+                .map(|_| World::new(Some(hlayers.clone()), Some(mut_rate)))
+                .collect(),
             ..Default::default()
         }
     }
@@ -52,6 +56,12 @@ impl Population {
                 self.track = i;
                 break;
             }
+        }
+    }
+
+    pub fn change_mut(&mut self, mut_rate: f32) {
+        for world in &mut self.worlds {
+            world.player.brain.as_mut().unwrap().mut_rate = mut_rate;
         }
     }
 
@@ -95,7 +105,7 @@ impl Population {
         }
         println!("Gen: {}, Fitness: {}", self.gen, self.worlds[0].fitness);
         let mut new_worlds = (0..std::cmp::max(1, self.size / 20))
-            .map(|i| World::simulate(Some(self.worlds[i].see_brain().to_owned())))
+            .map(|i| World::simulate(self.worlds[i].see_brain().to_owned()))
             .collect::<Vec<_>>();
         while new_worlds.len() < self.size {
             let rands = (gen_range(0., total), gen_range(0., total));
@@ -118,7 +128,7 @@ impl Population {
             }
             let mut new_brain = NN::crossover(a.unwrap(), b.unwrap());
             new_brain.mutate();
-            new_worlds.push(World::simulate(Some(new_brain)));
+            new_worlds.push(World::simulate(new_brain));
         }
         self.worlds = new_worlds;
         self.worlds[0].track(true);

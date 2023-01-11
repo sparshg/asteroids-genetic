@@ -61,13 +61,13 @@ async fn main() {
     let mut speedup = 1;
     let mut paused = false;
     let mut bias = false;
-    let mut size = 100;
-    let mut pop = Population::new(size as usize);
-    let mut x = 0.;
-    let mut xy = "".to_string();
-    let mut l1: usize = 6;
-    let mut l2: usize = 6;
-    let mut l3: usize = 0;
+    let mut size: u32 = 100;
+    let mut hlayers: Vec<usize> = vec![6, 6, 0];
+    let mut prev_hlayers = hlayers.clone();
+    let mut mut_rate = 0.05;
+    let mut prev_mut_rate = 0.05;
+    let mut pop = Population::new(size as usize, hlayers.clone(), mut_rate);
+    let mut activ: usize = 0;
 
     let ui_thick = 34.;
     let nums = &[
@@ -115,7 +115,7 @@ async fn main() {
             .build();
         let group_style = root_ui()
             .style_builder()
-            .color(Color::new(1., 0., 0., 1.))
+            .color(Color::new(1., 0., 0., 0.))
             .build();
         let editbox_style = root_ui()
             .style_builder()
@@ -129,11 +129,7 @@ async fn main() {
                 ],
             })
             .background_margin(RectOffset::new(1., 1., 1., 1.))
-            // .margin(RectOffset::new(10., 10., 8., 8.))
             .text_color(WHITE)
-            // .color_hovered(WHITE)
-            // .color_inactive(WHITE)
-            // .color(WHITE)
             .build();
         let combobox_style = root_ui()
             .style_builder()
@@ -147,9 +143,6 @@ async fn main() {
                 ],
             })
             .background_margin(RectOffset::new(1., 1., 1., 1.))
-            // .margin(RectOffset::new(1., 1., 1., 1.))
-            // .text_color_hovered(WHITE)
-            // .text_color(WHITE)
             .color_hovered(WHITE)
             .color_selected_hovered(WHITE)
             .color_inactive(WHITE)
@@ -174,11 +167,31 @@ async fn main() {
         .style_builder()
         .text_color(WHITE)
         .font_size(16)
-        // .margin(RectOffset::new(5., 5., 4., 0.))
         .text_color_hovered(LIGHTGRAY)
         .text_color_clicked(WHITE)
         .build();
+    skin2.button_style = root_ui()
+        .style_builder()
+        .background(Image {
+            width: 3,
+            height: 3,
+            bytes: vec![
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,
+                0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255,
+            ],
+        })
+        .background_margin(RectOffset::new(1., 1., 1., 1.))
+        .color_hovered(RED)
+        .color_clicked(BLUE)
+        .text_color(WHITE)
+        .text_color_hovered(WHITE)
+        .text_color_clicked(WHITE)
+        .margin(RectOffset::new(4., 4., 2., 2.))
+        .color_inactive(WHITE)
+        .build();
 
+    root_ui().push_skin(&skin);
     loop {
         clear_background(BLACK);
         set_camera(&gamecam);
@@ -245,9 +258,8 @@ async fn main() {
             vec2(WIDTH + 2. * th, th),
             vec2(ui_width, ui_height),
             |ui| {
-                ui.push_skin(&skin);
-                widgets::Group::new(hash!(), Vec2::new(ui_width, ui_thick))
-                    .position(Vec2::new(0., 0.))
+                widgets::Group::new(hash!(), vec2(ui_width, ui_thick))
+                    .position(vec2(0., 0.))
                     .ui(ui, |ui| {
                         ui.label(None, &format!("Generation: {}", pop.gen));
                         ui.same_line(242.);
@@ -255,8 +267,19 @@ async fn main() {
                             if let Some(path) = open_file_dialog("Load Model", "model.json", None) {
                                 let brain = NN::import(&path);
                                 size = 1;
-                                pop = Population::new(1);
-                                pop.worlds[0] = World::simulate(Some(brain));
+                                hlayers = brain
+                                    .config
+                                    .iter()
+                                    .take(brain.config.len() - 1)
+                                    .skip(1)
+                                    .map(|x| x - 1)
+                                    .collect::<Vec<_>>();
+                                hlayers.resize(3, 0);
+                                prev_hlayers = hlayers.clone();
+                                mut_rate = brain.mut_rate;
+                                prev_mut_rate = brain.mut_rate;
+                                pop = Population::new(size as usize, hlayers.clone(), mut_rate);
+                                pop.worlds[0] = World::simulate(brain);
                             }
                         }
                         ui.same_line(0.);
@@ -282,15 +305,18 @@ async fn main() {
                             paused = !paused;
                         };
                     });
-                widgets::Group::new(hash!(), Vec2::new(ui_width, ui_thick))
-                    .position(Vec2::new(0., ui_height - ui_thick))
+                widgets::Group::new(hash!(), vec2(ui_width, ui_thick))
+                    .position(vec2(0., ui_height - ui_thick))
                     .ui(ui, |ui| {
-                        ui.label(Some(vec2(0., 2.)), "«Population»");
-                        widgets::Group::new(hash!(), Vec2::new(100., ui_thick))
-                            .position(Vec2::new(140., 0.))
+                        ui.label(Some(vec2(0., 2.)), "Population:");
+                        widgets::Group::new(hash!(), vec2(200., ui_thick))
+                            .position(vec2(80., 0.))
                             .ui(ui, |ui| {
                                 ui.drag(hash!(), "", Some((1, 300)), &mut size);
                             });
+                        ui.push_skin(&skin2);
+                        ui.label(Some(vec2(230., ui_thick * 0.5 - 7.)), "«Drag»");
+                        ui.pop_skin();
                         ui.same_line(279.);
                         if widgets::Button::new(if pop.debug { "Debug:ON " } else { "Debug:OFF" })
                             .ui(ui)
@@ -310,29 +336,39 @@ async fn main() {
                         };
                         ui.same_line(0.);
                         if widgets::Button::new(restart).ui(ui) {
-                            pop = Population::new(size as usize);
+                            pop = Population::new(size as usize, hlayers.clone(), mut_rate);
                         };
                     });
-                ui.pop_skin();
                 ui.push_skin(&skin2);
                 widgets::Group::new(
                     hash!(),
-                    Vec2::new(ui_width * 0.2, ui_height * 0.8 - 2. * th - 2. * ui_thick),
+                    vec2(ui_width * 0.2, ui_height * 0.8 - 2. * th - 2. * ui_thick),
                 )
-                .position(Vec2::new(ui_width * 0.8, ui_height * 0.2 + ui_thick + th))
+                .position(vec2(ui_width * 0.8 - th, ui_height * 0.2 + ui_thick + th))
                 .ui(ui, |ui| {
                     // ui.input_text(hash!(), "vec2(100., 100.)", &mut xy);
-                    ui.label(None, "Hidden Layers Neuron");
-                    ui.label(None, "Config");
-                    ui.label(None, " ");
+                    ui.label(None, "Hidden Layers");
+                    ui.label(None, "Neurons Config");
 
-                    ui.combo_box(hash!(), "Layer 1", nums, &mut l1);
-                    ui.combo_box(hash!(), "Layer 2", nums, &mut l2);
-                    ui.combo_box(hash!(), "Layer 3", nums, &mut l3);
+                    ui.combo_box(hash!(), "Layer 1", nums, &mut hlayers[0]);
+                    ui.combo_box(hash!(), "Layer 2", nums, &mut hlayers[1]);
+                    ui.combo_box(hash!(), "Layer 3", nums, &mut hlayers[2]);
+                    if prev_hlayers != hlayers {
+                        pop = Population::new(size as usize, hlayers.clone(), mut_rate);
+                        prev_hlayers = hlayers.clone();
+                    }
                     ui.label(None, " ");
                     ui.label(None, "Mutation Rate");
-                    // ui.(hash!(), "", 0.0..0.2, &mut x);
+                    ui.drag(hash!(), "«Drag»", Some((0., 1.)), &mut mut_rate);
+                    if prev_mut_rate != mut_rate {
+                        pop.change_mut(mut_rate);
+                        prev_mut_rate = mut_rate;
+                    }
+                    ui.label(None, " ");
+                    ui.label(None, "Activation Func");
+                    ui.combo_box(hash!(), "«Select»", &["ReLU", "Sigm"], &mut activ);
                 });
+                ui.pop_skin();
             },
         );
         next_frame().await;
