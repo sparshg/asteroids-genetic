@@ -20,7 +20,6 @@ pub struct Player {
     shot_interval: u8,
     pub brain: Option<NN>,
     alive: bool,
-    pub color: Option<Color>,
     pub lifespan: u32,
     pub shots: u32,
 }
@@ -196,12 +195,7 @@ impl Player {
         // self.asteroid_data.clear();
     }
 
-    pub fn draw(&self, debug: bool) {
-        let color = match self.color {
-            Some(c) => c,
-            // None => WHITE,
-            None => Color::new(1., 1., 1., 0.3),
-        };
+    pub fn draw(&self, color: Color, debug: bool) {
         let p1 = self.pos + self.dir * 20.;
         let p2 = self.pos + self.dir.rotate(vec2(-18., -12.667));
         let p3 = self.pos + self.dir.rotate(vec2(-18., 12.667));
@@ -218,12 +212,12 @@ impl Player {
         }
         if debug {
             if let Some(ast) = self.asteroid.as_ref() {
-                draw_circle_lines(ast.pos.x, ast.pos.y, ast.radius, 1., DARKBLUE);
+                draw_circle_lines(ast.pos.x, ast.pos.y, ast.radius, 1., RED);
                 // let p = self.pos
                 //     + self.dir.rotate(Vec2::from_angle(self.asteroid_data[0].1))
                 //         * self.asteroid_data[0].0
                 //         * WIDTH;
-                draw_line(self.pos.x, self.pos.y, ast.pos.x, ast.pos.y, 1., DARKBLUE);
+                draw_line(self.pos.x, self.pos.y, ast.pos.x, ast.pos.y, 1., RED);
             }
 
             // Draw raycasts

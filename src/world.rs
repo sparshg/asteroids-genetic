@@ -13,6 +13,7 @@ pub struct World {
     pub over: bool,
     pub fitness: f32,
     pub track: bool,
+    color: Color,
 }
 
 impl World {
@@ -27,19 +28,18 @@ impl World {
                 Asteroid::new(AsteroidSize::Large),
                 Asteroid::new(AsteroidSize::Large),
             ],
+            color: Color::new(1., 1., 1., 0.4),
             ..Default::default()
         }
     }
 
     pub fn track(&mut self, track: bool) {
-        self.player.color = if track { Some(RED) } else { None };
-        for asteroid in &mut self.asteroids {
-            asteroid.color = if track {
-                Color::new(1., 0., 0., 0.8)
-            } else {
-                Color::new(1., 1., 1., 0.2)
-            };
-        }
+        self.track = track;
+        self.color = if track {
+            Color::new(0., 0.8, 0., 0.8)
+        } else {
+            Color::new(1., 1., 1., 0.4)
+        };
     }
 
     pub fn see_brain(&self) -> &NN {
@@ -112,9 +112,9 @@ impl World {
     }
 
     pub fn draw(&self, debug: bool) {
-        self.player.draw(debug);
+        self.player.draw(self.color, debug);
         for asteroid in &self.asteroids {
-            asteroid.draw();
+            asteroid.draw(self.color);
         }
         draw_text(
             &format!("{:.2}", self.fitness),
@@ -125,7 +125,7 @@ impl World {
         );
     }
 
-    pub fn draw_stats(&self, width: f32, height: f32) {
+    pub fn draw_stats(&self, width: f32, height: f32, rank: usize) {
         draw_rectangle_lines(-width * 0.5, -height * 0.5, width, height, 2., WHITE);
 
         let scale = 2.5;
@@ -197,5 +197,13 @@ impl World {
             130.,
             params,
         );
+        let str = &format!("RANK #{}", rank);
+        let w = measure_text(str, None, 64, 0.5);
+
+        draw_text_ex(str, -w.width * 0.5, -height * 0.35, {
+            let mut p = params.clone();
+            p.font_size = 64;
+            p
+        });
     }
 }

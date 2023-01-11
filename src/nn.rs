@@ -60,7 +60,12 @@ impl NN {
                 .weights
                 .iter()
                 .zip(b.weights.iter())
-                .map(|(m1, m2)| m1.zip_map(m2, |ele1, ele2| if r::random() { ele1 } else { ele2 }))
+                .map(|(m1, m2)| {
+                    m1.zip_map(
+                        m2,
+                        |ele1, ele2| if gen_range(0., 1.) < 0.5 { ele1 } else { ele2 },
+                    )
+                })
                 .collect(),
             ..Default::default()
         }

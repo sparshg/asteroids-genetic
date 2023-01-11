@@ -63,23 +63,18 @@ async fn main() {
     let mut bias = false;
     let mut size = 100;
     let mut pop = Population::new(size as usize);
+    let mut x = 0.;
+    let mut xy = "".to_string();
+    let mut l1: usize = 6;
+    let mut l2: usize = 6;
+    let mut l3: usize = 0;
 
     let ui_thick = 34.;
+    let nums = &[
+        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
+    ];
 
     let skin = {
-        let boxed = root_ui()
-            .style_builder()
-            .background(Image {
-                width: 3,
-                height: 3,
-                bytes: vec![
-                    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-                    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-                    255, 255, 255,
-                ],
-            })
-            .background_margin(RectOffset::new(1., 1., 1., 1.));
-
         let window_style = root_ui()
             .style_builder()
             .background(Image {
@@ -90,7 +85,18 @@ async fn main() {
             .background_margin(RectOffset::new(0., 0., 0., 0.))
             .color_inactive(WHITE)
             .build();
-        let button_style = boxed
+        let button_style = root_ui()
+            .style_builder()
+            .background(Image {
+                width: 3,
+                height: 3,
+                bytes: vec![
+                    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                    255, 255, 255,
+                ],
+            })
+            .background_margin(RectOffset::new(1., 1., 1., 1.))
             .color_hovered(RED)
             .color_clicked(BLUE)
             .text_color(WHITE)
@@ -104,11 +110,51 @@ async fn main() {
             .text_color(WHITE)
             .font_size(24)
             .margin(RectOffset::new(5., 5., 4., 4.))
-            .color_inactive(WHITE)
+            // .text_color_hovered(LIGHTGRAY)
+            // .text_color_clicked(WHITE)
             .build();
         let group_style = root_ui()
             .style_builder()
-            .color(Color::new(0., 0., 0., 0.))
+            .color(Color::new(1., 0., 0., 1.))
+            .build();
+        let editbox_style = root_ui()
+            .style_builder()
+            .background(Image {
+                width: 3,
+                height: 3,
+                bytes: vec![
+                    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                    255, 255, 255,
+                ],
+            })
+            .background_margin(RectOffset::new(1., 1., 1., 1.))
+            // .margin(RectOffset::new(10., 10., 8., 8.))
+            .text_color(WHITE)
+            // .color_hovered(WHITE)
+            // .color_inactive(WHITE)
+            // .color(WHITE)
+            .build();
+        let combobox_style = root_ui()
+            .style_builder()
+            .background(Image {
+                width: 3,
+                height: 3,
+                bytes: vec![
+                    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                    255, 255, 255,
+                ],
+            })
+            .background_margin(RectOffset::new(1., 1., 1., 1.))
+            // .margin(RectOffset::new(1., 1., 1., 1.))
+            // .text_color_hovered(WHITE)
+            // .text_color(WHITE)
+            .color_hovered(WHITE)
+            .color_selected_hovered(WHITE)
+            .color_inactive(WHITE)
+            .color_clicked(WHITE)
+            .color(WHITE)
             .build();
 
         Skin {
@@ -116,13 +162,23 @@ async fn main() {
             button_style,
             label_style,
             group_style,
-
+            editbox_style,
+            combobox_style,
             margin: 0.,
             ..root_ui().default_skin()
         }
     };
 
-    root_ui().push_skin(&skin);
+    let mut skin2 = skin.clone();
+    skin2.label_style = root_ui()
+        .style_builder()
+        .text_color(WHITE)
+        .font_size(16)
+        // .margin(RectOffset::new(5., 5., 4., 0.))
+        .text_color_hovered(LIGHTGRAY)
+        .text_color_clicked(WHITE)
+        .build();
+
     loop {
         clear_background(BLACK);
         set_camera(&gamecam);
@@ -157,29 +213,29 @@ async fn main() {
         );
 
         set_camera(&netcam);
-        pop.worlds[0].player.draw_brain(
+        pop.worlds[pop.track].player.draw_brain(
             screen_width() - WIDTH - 3. * th,
             (screen_height() - 3. * th) * 0.5,
             bias,
         );
         set_camera(&statcam);
-        pop.worlds[0].draw_stats(
+        pop.worlds[pop.track].draw_stats(
             screen_width() - WIDTH - 3. * th,
             (screen_height() - 7. * th) * 0.5 - 2. * ui_thick,
-        );
-        if is_mouse_button_pressed(MouseButton::Left) && mouse_position().0 < WIDTH + th {
-            let (x, y) = mouse_position();
-            for i in 0..pop.worlds.len() {
-                if (pop.worlds[i].player.pos - vec2(x - th - WIDTH * 0.5, y - th - HEIGHT * 0.5))
-                    .length_squared()
-                    < 256.
-                {
-                    pop.worlds.swap(0, i);
-                    pop.worlds[0].track(true);
-                    pop.worlds[i].track(false);
-                    break;
+            pop.worlds.iter().fold(1, |acc, w| {
+                acc + if w.fitness > pop.worlds[pop.track].fitness {
+                    1
+                } else {
+                    0
                 }
-            }
+            }),
+        );
+        if !pop.focus
+            && is_mouse_button_pressed(MouseButton::Left)
+            && mouse_position().0 < WIDTH + th
+        {
+            let (x, y) = mouse_position();
+            pop.change_track(vec2(x - th - WIDTH * 0.5, y - th - HEIGHT * 0.5));
         }
 
         let ui_width = screen_width() - WIDTH - 3. * th + 1.;
@@ -189,6 +245,7 @@ async fn main() {
             vec2(WIDTH + 2. * th, th),
             vec2(ui_width, ui_height),
             |ui| {
+                ui.push_skin(&skin);
                 widgets::Group::new(hash!(), Vec2::new(ui_width, ui_thick))
                     .position(Vec2::new(0., 0.))
                     .ui(ui, |ui| {
@@ -205,7 +262,7 @@ async fn main() {
                         ui.same_line(0.);
                         if widgets::Button::new("Save Model").ui(ui) {
                             if let Some(path) = save_file_dialog("Save Model", "model.json") {
-                                pop.worlds[0].export_brain(&path);
+                                pop.worlds[pop.track].export_brain(&path);
                             }
                         }
                         ui.same_line(0.);
@@ -234,8 +291,10 @@ async fn main() {
                             .ui(ui, |ui| {
                                 ui.drag(hash!(), "", Some((1, 300)), &mut size);
                             });
-                        ui.same_line(307.);
-                        if widgets::Button::new("Debug").ui(ui) {
+                        ui.same_line(279.);
+                        if widgets::Button::new(if pop.debug { "Debug:ON " } else { "Debug:OFF" })
+                            .ui(ui)
+                        {
                             pop.debug = !pop.debug;
                         };
                         ui.same_line(0.);
@@ -244,7 +303,7 @@ async fn main() {
                             bias = !bias;
                         };
                         ui.same_line(0.);
-                        if widgets::Button::new(if !pop.focus { "Show Best" } else { "Show All " })
+                        if widgets::Button::new(if !pop.focus { "Focus:OFF" } else { "Focus:ON " })
                             .ui(ui)
                         {
                             pop.focus = !pop.focus;
@@ -254,6 +313,26 @@ async fn main() {
                             pop = Population::new(size as usize);
                         };
                     });
+                ui.pop_skin();
+                ui.push_skin(&skin2);
+                widgets::Group::new(
+                    hash!(),
+                    Vec2::new(ui_width * 0.2, ui_height * 0.8 - 2. * th - 2. * ui_thick),
+                )
+                .position(Vec2::new(ui_width * 0.8, ui_height * 0.2 + ui_thick + th))
+                .ui(ui, |ui| {
+                    // ui.input_text(hash!(), "vec2(100., 100.)", &mut xy);
+                    ui.label(None, "Hidden Layers Neuron");
+                    ui.label(None, "Config");
+                    ui.label(None, " ");
+
+                    ui.combo_box(hash!(), "Layer 1", nums, &mut l1);
+                    ui.combo_box(hash!(), "Layer 2", nums, &mut l2);
+                    ui.combo_box(hash!(), "Layer 3", nums, &mut l3);
+                    ui.label(None, " ");
+                    ui.label(None, "Mutation Rate");
+                    // ui.(hash!(), "", 0.0..0.2, &mut x);
+                });
             },
         );
         next_frame().await;

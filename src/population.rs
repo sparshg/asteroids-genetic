@@ -9,6 +9,7 @@ pub struct Population {
     pub focus: bool,
     pub debug: bool,
     pub worlds: Vec<World>,
+    pub track: usize,
 }
 
 impl Population {
@@ -37,6 +38,20 @@ impl Population {
         }
         if is_key_pressed(KeyCode::D) {
             self.debug = !self.debug;
+        }
+    }
+
+    pub fn change_track(&mut self, pos: Vec2) {
+        for i in 0..self.worlds.len() {
+            if !self.worlds[i].over
+                && !self.worlds[i].track
+                && (self.worlds[i].player.pos - pos).length_squared() < 256.
+            {
+                self.worlds[self.track].track(false);
+                self.worlds[i].track(true);
+                self.track = i;
+                break;
+            }
         }
     }
 
@@ -82,7 +97,6 @@ impl Population {
         let mut new_worlds = (0..std::cmp::max(1, self.size / 20))
             .map(|i| World::simulate(Some(self.worlds[i].see_brain().to_owned())))
             .collect::<Vec<_>>();
-        new_worlds[0].track(true);
         while new_worlds.len() < self.size {
             let rands = (gen_range(0., total), gen_range(0., total));
             let mut sum = 0.;
@@ -107,5 +121,7 @@ impl Population {
             new_worlds.push(World::simulate(Some(new_brain)));
         }
         self.worlds = new_worlds;
+        self.worlds[0].track(true);
+        self.track = 0;
     }
 }
