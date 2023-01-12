@@ -6,6 +6,12 @@ use crate::{
     HEIGHT, WIDTH,
 };
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum AutoSwitch {
+    Best,
+    BestAlive,
+}
+
 #[derive(Default)]
 pub struct Population {
     size: usize,
@@ -15,16 +21,24 @@ pub struct Population {
     pub worlds: Vec<World>,
     pub track: usize,
     pub hlayers: Vec<usize>,
+    pub auto_switch: Option<AutoSwitch>,
 }
 
 impl Population {
-    pub fn new(size: usize, hlayers: Vec<usize>, mut_rate: f32, activ: ActivationFunc) -> Self {
+    pub fn new(
+        size: usize,
+        auto_switch: Option<AutoSwitch>,
+        hlayers: Vec<usize>,
+        mut_rate: f32,
+        activ: ActivationFunc,
+    ) -> Self {
         Self {
             size,
             hlayers: hlayers.clone(),
             worlds: (0..size)
                 .map(|_| World::new(Some(hlayers.clone()), Some(mut_rate), Some(activ)))
                 .collect(),
+            auto_switch,
             ..Default::default()
         }
     }
@@ -35,6 +49,14 @@ impl Population {
             if !world.over {
                 alive = true;
                 world.update();
+            }
+        }
+        if self.worlds[self.track].over {
+            if let Some(auto_switch) = self.auto_switch {
+                match auto_switch {
+                    AutoSwitch::Best => self.track_best(true),
+                    AutoSwitch::BestAlive => self.track_best(false),
+                }
             }
         }
         if !alive {
@@ -61,6 +83,25 @@ impl Population {
                 break;
             }
         }
+    }
+    pub fn track_best(&mut self, can_be_dead: bool) {
+        self.worlds[self.track].track(false);
+        let i = self
+            .worlds
+            .iter()
+            .enumerate()
+            .filter(|(_, w)| !w.over || can_be_dead)
+            .max_by(|(_, a), (_, b)| a.fitness.total_cmp(&b.fitness))
+            .map(|(i, _)| i);
+        if let Some(i) = i {
+            self.worlds[i].track(true);
+            self.track = i;
+        }
+    }
+    pub fn track_prev_best(&mut self) {
+        self.worlds[self.track].track(false);
+        self.worlds[0].track(true);
+        self.track = 0;
     }
 
     pub fn change_mut(&mut self, mut_rate: f32) {

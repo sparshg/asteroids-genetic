@@ -11,7 +11,7 @@ use macroquad::{
     prelude::*,
     ui::{hash, root_ui, widgets, Skin},
 };
-use population::Population;
+use population::{AutoSwitch, Population};
 use world::World;
 
 pub const WIDTH: f32 = 800.;
@@ -76,8 +76,15 @@ async fn main() {
         ActivationFunc::Sigmoid,
         ActivationFunc::Tanh,
     ];
+    let mut auto_switch = Some(AutoSwitch::Best);
 
-    let mut pop = Population::new(size as usize, hlayers.clone(), mut_rate, activs[activ]);
+    let mut pop = Population::new(
+        size as usize,
+        auto_switch,
+        hlayers.clone(),
+        mut_rate,
+        activs[activ],
+    );
 
     let ui_thick = 34.;
     let nums = &[
@@ -192,13 +199,34 @@ async fn main() {
             ],
         })
         .background_margin(RectOffset::new(1., 1., 1., 1.))
-        .color_hovered(RED)
-        .color_clicked(BLUE)
+        .color_hovered(GREEN)
+        .color_clicked(GREEN)
         .text_color(WHITE)
         .text_color_hovered(WHITE)
-        .text_color_clicked(WHITE)
+        .text_color_clicked(GREEN)
         .margin(RectOffset::new(4., 4., 2., 2.))
         .color_inactive(WHITE)
+        .build();
+
+    let mut skin3 = skin2.clone();
+    skin3.button_style = root_ui()
+        .style_builder()
+        .background(Image {
+            width: 3,
+            height: 3,
+            bytes: vec![
+                0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 255, 0,
+                255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
+            ],
+        })
+        .background_margin(RectOffset::new(1., 1., 1., 1.))
+        .color_hovered(GREEN)
+        .color_clicked(GREEN)
+        .text_color(GREEN)
+        .text_color_hovered(GREEN)
+        .text_color_clicked(GREEN)
+        .margin(RectOffset::new(4., 4., 2., 2.))
+        .color_inactive(GREEN)
         .build();
 
     root_ui().push_skin(&skin);
@@ -297,6 +325,7 @@ async fn main() {
 
                                 pop = Population::new(
                                     size as usize,
+                                    auto_switch,
                                     hlayers.clone(),
                                     mut_rate,
                                     activs[activ],
@@ -360,6 +389,7 @@ async fn main() {
                         if widgets::Button::new(restart).ui(ui) {
                             pop = Population::new(
                                 size as usize,
+                                auto_switch,
                                 hlayers.clone(),
                                 mut_rate,
                                 activs[activ],
@@ -371,9 +401,60 @@ async fn main() {
                     hash!(),
                     vec2(ui_width * 0.2, ui_height * 0.8 - 2. * th - 2. * ui_thick),
                 )
-                .position(vec2(ui_width * 0.8 - th, ui_height * 0.2 + ui_thick + th))
+                .position(vec2(ui_width * 0.6, ui_height * 0.23 + ui_thick + th))
                 .ui(ui, |ui| {
-                    // ui.input_text(hash!(), "vec2(100., 100.)", &mut xy);
+                    ui.label(None, "Track Ship:");
+
+                    if ui.button(None, "Best Alive") {
+                        pop.track_best(false);
+                    }
+                    if ui.button(None, "Current #1") {
+                        pop.track_best(true);
+                    }
+                    if ui.button(None, "LastGen #1") {
+                        pop.track_prev_best();
+                    }
+                    ui.label(None, " ");
+                    ui.label(None, "Auto Switch");
+                    ui.label(None, "When Dead to:");
+
+                    if auto_switch == Some(AutoSwitch::Best) {
+                        ui.push_skin(&skin3);
+                        ui.button(None, "Current #1");
+                        ui.pop_skin();
+                    } else {
+                        if ui.button(None, "Current #1") {
+                            auto_switch = Some(AutoSwitch::Best);
+                            pop.auto_switch = auto_switch;
+                        }
+                    }
+                    if auto_switch == Some(AutoSwitch::BestAlive) {
+                        ui.push_skin(&skin3);
+                        ui.button(None, "Best Alive");
+                        ui.pop_skin();
+                    } else {
+                        if ui.button(None, "Best Alive") {
+                            auto_switch = Some(AutoSwitch::BestAlive);
+                            pop.auto_switch = auto_switch;
+                        }
+                    }
+                    if auto_switch.is_none() {
+                        ui.push_skin(&skin3);
+                        ui.button(None, "Do Nothing");
+                        ui.pop_skin();
+                    } else {
+                        if ui.button(None, "Do Nothing") {
+                            auto_switch = None;
+                            pop.auto_switch = auto_switch;
+                        }
+                    }
+                });
+                widgets::Group::new(
+                    hash!(),
+                    vec2(ui_width * 0.2, ui_height * 0.8 - 2. * th - 2. * ui_thick),
+                )
+                .position(vec2(ui_width * 0.8 - th, ui_height * 0.22 + ui_thick + th))
+                .ui(ui, |ui| {
                     ui.label(None, "Hidden Layers");
                     ui.label(None, "Neurons Config");
 
@@ -383,6 +464,7 @@ async fn main() {
                     if prev_hlayers != hlayers {
                         pop = Population::new(
                             size as usize,
+                            auto_switch,
                             hlayers.clone(),
                             mut_rate,
                             activs[activ],

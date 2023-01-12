@@ -181,7 +181,7 @@ impl World {
         draw_text_ex(
             if self.over { "DEAD" } else { "ALIVE" },
             -width * 0.5 + 20.,
-            70.,
+            55.,
             {
                 let mut p = params.clone();
                 p.color = if self.over { RED } else { GREEN };
@@ -191,19 +191,25 @@ impl World {
         draw_text_ex(
             &format!("Hits: {}", self.score),
             -width * 0.5 + 20.,
-            90.,
+            75.,
             params,
         );
         draw_text_ex(
             &format!("Fired: {}", self.player.shots),
             -width * 0.5 + 20.,
-            110.,
+            95.,
             params,
         );
         draw_text_ex(
             &format!("Fitness: {:.2}", self.fitness),
             -width * 0.5 + 20.,
-            130.,
+            115.,
+            params,
+        );
+        draw_text_ex(
+            &format!("Lifetime: {:.2}", self.player.lifespan as f32 / 60.),
+            -width * 0.5 + 20.,
+            135.,
             params,
         );
         let str = &format!("RANK #{}", rank);
