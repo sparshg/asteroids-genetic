@@ -1,6 +1,6 @@
 use crate::{
     asteroids::{Asteroid, AsteroidSize},
-    nn::NN,
+    nn::{ActivationFunc, NN},
     player::Player,
 };
 use macroquad::{prelude::*, rand::gen_range};
@@ -17,9 +17,13 @@ pub struct World {
 }
 
 impl World {
-    pub fn new(hlayers: Option<Vec<usize>>, mut_rate: Option<f32>) -> Self {
+    pub fn new(
+        hlayers: Option<Vec<usize>>,
+        mut_rate: Option<f32>,
+        activ: Option<ActivationFunc>,
+    ) -> Self {
         Self {
-            player: Player::new(hlayers, mut_rate),
+            player: Player::new(hlayers, mut_rate, activ),
             score: 1.,
             asteroids: vec![
                 Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large),
@@ -33,7 +37,7 @@ impl World {
         }
     }
     pub fn simulate(brain: NN) -> Self {
-        let mut w = World::new(None, None);
+        let mut w = World::new(None, None, None);
         w.player.brain = Some(brain);
         w
     }

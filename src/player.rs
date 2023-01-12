@@ -2,7 +2,11 @@ use std::{f32::consts::PI, f64::consts::TAU};
 
 use macroquad::{prelude::*, rand::gen_range};
 
-use crate::{asteroids::Asteroid, nn::NN, HEIGHT, WIDTH};
+use crate::{
+    asteroids::Asteroid,
+    nn::{ActivationFunc, NN},
+    HEIGHT, WIDTH,
+};
 #[derive(Default)]
 pub struct Player {
     pub pos: Vec2,
@@ -25,14 +29,18 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(config: Option<Vec<usize>>, mut_rate: Option<f32>) -> Self {
+    pub fn new(
+        config: Option<Vec<usize>>,
+        mut_rate: Option<f32>,
+        activ: Option<ActivationFunc>,
+    ) -> Self {
         Self {
             brain: match config {
                 Some(mut c) => {
                     c.retain(|&x| x != 0);
                     c.insert(0, 5);
                     c.push(4);
-                    Some(NN::new(c, mut_rate.unwrap()))
+                    Some(NN::new(c, mut_rate.unwrap(), activ.unwrap()))
                 }
                 _ => None,
             },
@@ -112,6 +120,7 @@ impl Player {
         self.last_shot += 1;
         self.acc = 0.;
         self.outputs = vec![0.; 4];
+        let mut keys = vec![false; 4];
         if let Some(ast) = self.asteroid.as_ref() {
             self.inputs = vec![
                 (ast.pos - self.pos).length() / HEIGHT,
@@ -135,9 +144,19 @@ impl Player {
 
             if let Some(brain) = &self.brain {
                 self.outputs = brain.feed_forward(&self.inputs);
+                keys = self
+                    .outputs
+                    .iter()
+                    .map(|&x| {
+                        x > if brain.activ_func == ActivationFunc::Sigmoid {
+                            0.85
+                        } else {
+                            0.
+                        }
+                    })
+                    .collect();
             }
         }
-        let keys: Vec<bool> = self.outputs.iter().map(|&x| x > 0.).collect();
         if keys[0] {
             // RIGHT
             self.rot = (self.rot + 0.1 + TAU as f32) % TAU as f32;
@@ -251,7 +270,7 @@ impl Bullet {
     fn update(&mut self) {
         self.pos += self.vel;
     }
-    fn draw(&self, color: Color) {
-        draw_circle(self.pos.x, self.pos.y, 2., color);
+    fn draw(&self, c: Color) {
+        draw_circle(self.pos.x, self.pos.y, 2., Color::new(c.r, c.g, c.b, 0.9));
     }
 }

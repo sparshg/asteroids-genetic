@@ -4,7 +4,7 @@ mod player;
 mod population;
 mod world;
 
-use nn::NN;
+use nn::{ActivationFunc, NN};
 use tinyfiledialogs::*;
 
 use macroquad::{
@@ -62,12 +62,22 @@ async fn main() {
     let mut paused = false;
     let mut bias = false;
     let mut size: u32 = 100;
+
     let mut hlayers: Vec<usize> = vec![6, 6, 0];
     let mut prev_hlayers = hlayers.clone();
+
     let mut mut_rate = 0.05;
     let mut prev_mut_rate = 0.05;
-    let mut pop = Population::new(size as usize, hlayers.clone(), mut_rate);
+
     let mut activ: usize = 0;
+    let mut prev_activ: usize = 0;
+    let activs = [
+        ActivationFunc::ReLU,
+        ActivationFunc::Sigmoid,
+        ActivationFunc::Tanh,
+    ];
+
+    let mut pop = Population::new(size as usize, hlayers.clone(), mut_rate, activs[activ]);
 
     let ui_thick = 34.;
     let nums = &[
@@ -262,6 +272,9 @@ async fn main() {
                     .position(vec2(0., 0.))
                     .ui(ui, |ui| {
                         ui.label(None, &format!("Generation: {}", pop.gen));
+                        ui.push_skin(&skin2);
+                        ui.label(vec2(200., 8.), &format!("{: >4}x", speedup));
+                        ui.pop_skin();
                         ui.same_line(242.);
                         if widgets::Button::new("Load Model").ui(ui) {
                             if let Some(path) = open_file_dialog("Load Model", "model.json", None) {
@@ -275,10 +288,19 @@ async fn main() {
                                     .map(|x| x - 1)
                                     .collect::<Vec<_>>();
                                 hlayers.resize(3, 0);
-                                prev_hlayers = hlayers.clone();
                                 mut_rate = brain.mut_rate;
-                                prev_mut_rate = brain.mut_rate;
-                                pop = Population::new(size as usize, hlayers.clone(), mut_rate);
+                                activ = activs.iter().position(|&x| x == brain.activ_func).unwrap();
+
+                                prev_hlayers = hlayers.clone();
+                                prev_mut_rate = mut_rate;
+                                prev_activ = activ;
+
+                                pop = Population::new(
+                                    size as usize,
+                                    hlayers.clone(),
+                                    mut_rate,
+                                    activs[activ],
+                                );
                                 pop.worlds[0] = World::simulate(brain);
                             }
                         }
@@ -336,7 +358,12 @@ async fn main() {
                         };
                         ui.same_line(0.);
                         if widgets::Button::new(restart).ui(ui) {
-                            pop = Population::new(size as usize, hlayers.clone(), mut_rate);
+                            pop = Population::new(
+                                size as usize,
+                                hlayers.clone(),
+                                mut_rate,
+                                activs[activ],
+                            );
                         };
                     });
                 ui.push_skin(&skin2);
@@ -354,7 +381,12 @@ async fn main() {
                     ui.combo_box(hash!(), "Layer 2", nums, &mut hlayers[1]);
                     ui.combo_box(hash!(), "Layer 3", nums, &mut hlayers[2]);
                     if prev_hlayers != hlayers {
-                        pop = Population::new(size as usize, hlayers.clone(), mut_rate);
+                        pop = Population::new(
+                            size as usize,
+                            hlayers.clone(),
+                            mut_rate,
+                            activs[activ],
+                        );
                         prev_hlayers = hlayers.clone();
                     }
                     ui.label(None, " ");
@@ -366,7 +398,11 @@ async fn main() {
                     }
                     ui.label(None, " ");
                     ui.label(None, "Activation Func");
-                    ui.combo_box(hash!(), "«Select»", &["ReLU", "Sigm"], &mut activ);
+                    ui.combo_box(hash!(), "«Select»", &["ReLU", "Sigm", "Tanh"], &mut activ);
+                    if prev_activ != activ {
+                        pop.change_activ(activs[activ]);
+                        prev_activ = activ;
+                    }
                 });
                 ui.pop_skin();
             },

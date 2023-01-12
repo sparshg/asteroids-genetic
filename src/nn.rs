@@ -5,16 +5,15 @@ use rand_distr::StandardNormal;
 use serde::{Deserialize, Serialize};
 extern crate rand as r;
 
-#[derive(PartialEq, Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 
 pub enum ActivationFunc {
+    ReLU,
     Sigmoid,
     Tanh,
-    #[default]
-    ReLU,
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NN {
     pub config: Vec<usize>,
     pub weights: Vec<DMatrix<f32>>,
@@ -24,7 +23,7 @@ pub struct NN {
 
 impl NN {
     // Vec of number of neurons in input, hidden 1, hidden 2, ..., output layers
-    pub fn new(config: Vec<usize>, mut_rate: f32) -> Self {
+    pub fn new(config: Vec<usize>, mut_rate: f32, activ: ActivationFunc) -> Self {
         let mut rng = r::thread_rng();
 
         Self {
@@ -46,7 +45,7 @@ impl NN {
                 .collect(),
 
             mut_rate,
-            ..Default::default()
+            activ_func: activ,
         }
     }
 
@@ -67,7 +66,6 @@ impl NN {
                     )
                 })
                 .collect(),
-            ..Default::default()
         }
     }
 

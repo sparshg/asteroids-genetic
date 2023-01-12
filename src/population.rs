@@ -1,6 +1,10 @@
 use macroquad::{prelude::*, rand::gen_range};
 
-use crate::{nn::NN, world::World, HEIGHT, WIDTH};
+use crate::{
+    nn::{ActivationFunc, NN},
+    world::World,
+    HEIGHT, WIDTH,
+};
 
 #[derive(Default)]
 pub struct Population {
@@ -14,12 +18,12 @@ pub struct Population {
 }
 
 impl Population {
-    pub fn new(size: usize, hlayers: Vec<usize>, mut_rate: f32) -> Self {
+    pub fn new(size: usize, hlayers: Vec<usize>, mut_rate: f32, activ: ActivationFunc) -> Self {
         Self {
             size,
             hlayers: hlayers.clone(),
             worlds: (0..size)
-                .map(|_| World::new(Some(hlayers.clone()), Some(mut_rate)))
+                .map(|_| World::new(Some(hlayers.clone()), Some(mut_rate), Some(activ)))
                 .collect(),
             ..Default::default()
         }
@@ -62,6 +66,12 @@ impl Population {
     pub fn change_mut(&mut self, mut_rate: f32) {
         for world in &mut self.worlds {
             world.player.brain.as_mut().unwrap().mut_rate = mut_rate;
+        }
+    }
+
+    pub fn change_activ(&mut self, activ: ActivationFunc) {
+        for world in &mut self.worlds {
+            world.player.brain.as_mut().unwrap().activ_func = activ;
         }
     }
 
