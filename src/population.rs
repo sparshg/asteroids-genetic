@@ -32,15 +32,18 @@ impl Population {
         mut_rate: f32,
         activ: ActivationFunc,
     ) -> Self {
-        Self {
+        let mut s = Self {
             size,
             hlayers: hlayers.clone(),
             worlds: (0..size)
                 .map(|_| World::new(Some(hlayers.clone()), Some(mut_rate), Some(activ)))
                 .collect(),
             auto_switch,
+            focus: true,
             ..Default::default()
-        }
+        };
+        s.worlds[0].track(true);
+        s
     }
 
     pub fn update(&mut self) {
@@ -126,8 +129,10 @@ impl Population {
                 world.draw(self.debug);
             }
         }
+        self.draw_borders();
+    }
 
-        // draw black background outside the screen
+    pub fn draw_borders(&self) {
         let th = (screen_height() - HEIGHT) * 0.5;
         draw_rectangle(-WIDTH * 0.5, -screen_height() * 0.5, WIDTH, th, BLACK);
         draw_rectangle(-WIDTH * 0.5, screen_height() * 0.5 - th, WIDTH, th, BLACK);

@@ -61,7 +61,9 @@ async fn main() {
     let mut speedup = 1;
     let mut paused = false;
     let mut bias = false;
+    let mut human = false;
     let mut size: u32 = 100;
+    let mut world: World = World::new(None, None, None);
 
     let mut hlayers: Vec<usize> = vec![6, 6, 0];
     let mut prev_hlayers = hlayers.clone();
@@ -76,7 +78,7 @@ async fn main() {
         ActivationFunc::Sigmoid,
         ActivationFunc::Tanh,
     ];
-    let mut auto_switch = Some(AutoSwitch::Best);
+    let mut auto_switch = Some(AutoSwitch::BestAlive);
 
     let mut pop = Population::new(
         size as usize,
@@ -241,10 +243,19 @@ async fn main() {
         }
         if !paused {
             for _ in 0..speedup {
-                pop.update();
+                if !human {
+                    pop.update()
+                } else if !world.over {
+                    world.update()
+                };
             }
         }
-        pop.draw();
+        if human {
+            world.draw(pop.debug);
+            pop.draw_borders();
+        } else {
+            pop.draw();
+        }
         draw_rectangle_lines(-WIDTH * 0.5, -HEIGHT * 0.5, WIDTH, HEIGHT, 2., WHITE);
         draw_rectangle_lines(
             WIDTH * 0.5 + th,
@@ -270,7 +281,12 @@ async fn main() {
             bias,
         );
         set_camera(&statcam);
-        pop.worlds[pop.track].draw_stats(
+        let w = if human {
+            &world
+        } else {
+            &pop.worlds[pop.track]
+        };
+        w.draw_stats(
             screen_width() - WIDTH - 3. * th,
             (screen_height() - 7. * th) * 0.5 - 2. * ui_thick,
             pop.worlds.iter().fold(1, |acc, w| {
@@ -387,47 +403,47 @@ async fn main() {
                         };
                         ui.same_line(0.);
                         if widgets::Button::new(restart).ui(ui) {
-                            pop = Population::new(
-                                size as usize,
-                                auto_switch,
-                                hlayers.clone(),
-                                mut_rate,
-                                activs[activ],
-                            );
+                            if human {
+                                world = World::new(None, None, None);
+                            } else {
+                                pop = Population::new(
+                                    size as usize,
+                                    auto_switch,
+                                    hlayers.clone(),
+                                    mut_rate,
+                                    activs[activ],
+                                );
+                            }
                         };
                     });
                 ui.push_skin(&skin2);
                 widgets::Group::new(
                     hash!(),
-                    vec2(ui_width * 0.2, ui_height * 0.8 - 2. * th - 2. * ui_thick),
+                    vec2(ui_width * 0.2, ui_height * 0.85 - 2. * th - 2. * ui_thick),
                 )
-                .position(vec2(ui_width * 0.6, ui_height * 0.23 + ui_thick + th))
+                .position(vec2(ui_width * 0.82, ui_height * 0.15 + ui_thick + th))
                 .ui(ui, |ui| {
                     ui.label(None, "Track Ship:");
+                    ui.label(None, "(or click a");
+                    ui.label(None, "ship in game)");
 
                     if ui.button(None, "Best Alive") {
                         pop.track_best(false);
                     }
                     if ui.button(None, "Current #1") {
                         pop.track_best(true);
+                        auto_switch = Some(AutoSwitch::Best);
+                        pop.auto_switch = auto_switch;
                     }
                     if ui.button(None, "LastGen #1") {
                         pop.track_prev_best();
+                        auto_switch = None;
+                        pop.auto_switch = auto_switch;
                     }
                     ui.label(None, " ");
                     ui.label(None, "Auto Switch");
                     ui.label(None, "When Dead to:");
 
-                    if auto_switch == Some(AutoSwitch::Best) {
-                        ui.push_skin(&skin3);
-                        ui.button(None, "Current #1");
-                        ui.pop_skin();
-                    } else {
-                        if ui.button(None, "Current #1") {
-                            auto_switch = Some(AutoSwitch::Best);
-                            pop.auto_switch = auto_switch;
-                        }
-                    }
                     if auto_switch == Some(AutoSwitch::BestAlive) {
                         ui.push_skin(&skin3);
                         ui.button(None, "Best Alive");
@@ -435,6 +451,16 @@ async fn main() {
                     } else {
                         if ui.button(None, "Best Alive") {
                             auto_switch = Some(AutoSwitch::BestAlive);
+                            pop.auto_switch = auto_switch;
+                        }
+                    }
+                    if auto_switch == Some(AutoSwitch::Best) {
+                        ui.push_skin(&skin3);
+                        ui.button(None, "Current #1");
+                        ui.pop_skin();
+                    } else {
+                        if ui.button(None, "Current #1") {
+                            auto_switch = Some(AutoSwitch::Best);
                             pop.auto_switch = auto_switch;
                         }
                     }
@@ -451,10 +477,47 @@ async fn main() {
                 });
                 widgets::Group::new(
                     hash!(),
-                    vec2(ui_width * 0.2, ui_height * 0.8 - 2. * th - 2. * ui_thick),
+                    vec2(ui_width * 0.2, ui_height * 0.85 - 2. * th - 2. * ui_thick),
                 )
-                .position(vec2(ui_width * 0.8 - th, ui_height * 0.22 + ui_thick + th))
+                .position(vec2(ui_width * 0.6 - th, ui_height * 0.15 + ui_thick + th))
                 .ui(ui, |ui| {
+                    ui.label(None, " ");
+                    ui.push_skin(&skin);
+                    if ui.button(
+                        None,
+                        if human {
+                            "  Train  AI  "
+                        } else {
+                            "Play As Human"
+                        },
+                    ) {
+                        human = !human;
+                        if human {
+                            world = World::new(None, None, None);
+                        } else {
+                            pop = Population::new(
+                                size as usize,
+                                auto_switch,
+                                hlayers.clone(),
+                                mut_rate,
+                                activs[activ],
+                            );
+                        }
+                    }
+                    ui.pop_skin();
+                    ui.label(None, "Mutation Rate");
+                    ui.drag(hash!(), "«Drag»", Some((0., 1.)), &mut mut_rate);
+                    if prev_mut_rate != mut_rate {
+                        pop.change_mut(mut_rate);
+                        prev_mut_rate = mut_rate;
+                    }
+                    ui.label(None, "Activation Func");
+                    ui.combo_box(hash!(), "«Select»", &["ReLU", "Sigm", "Tanh"], &mut activ);
+                    if prev_activ != activ {
+                        pop.change_activ(activs[activ]);
+                        prev_activ = activ;
+                    }
+                    ui.label(None, " ");
                     ui.label(None, "Hidden Layers");
                     ui.label(None, "Neurons Config");
 
@@ -470,20 +533,6 @@ async fn main() {
                             activs[activ],
                         );
                         prev_hlayers = hlayers.clone();
-                    }
-                    ui.label(None, " ");
-                    ui.label(None, "Mutation Rate");
-                    ui.drag(hash!(), "«Drag»", Some((0., 1.)), &mut mut_rate);
-                    if prev_mut_rate != mut_rate {
-                        pop.change_mut(mut_rate);
-                        prev_mut_rate = mut_rate;
-                    }
-                    ui.label(None, " ");
-                    ui.label(None, "Activation Func");
-                    ui.combo_box(hash!(), "«Select»", &["ReLU", "Sigm", "Tanh"], &mut activ);
-                    if prev_activ != activ {
-                        pop.change_activ(activs[activ]);
-                        prev_activ = activ;
                     }
                 });
                 ui.pop_skin();

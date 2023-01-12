@@ -96,7 +96,7 @@ impl Player {
         //         .unwrap();
         //     }
         // }
-        if asteroid.check_collision(self.pos, 8.) || self.lifespan > 4000 {
+        if asteroid.check_collision(self.pos, 8.) || self.lifespan > 4000 && self.brain.is_some() {
             self.alive = false;
             return true;
         }
@@ -157,21 +157,21 @@ impl Player {
                     .collect();
             }
         }
-        if keys[0] {
+        if keys[0] || self.brain.is_none() && is_key_down(KeyCode::Right) {
             // RIGHT
             self.rot = (self.rot + 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if keys[1] {
+        if keys[1] || self.brain.is_none() && is_key_down(KeyCode::Left) {
             // LEFT
             self.rot = (self.rot - 0.1 + TAU as f32) % TAU as f32;
             self.dir = vec2(self.rot.cos(), self.rot.sin());
         }
-        if is_key_down(KeyCode::Up) || keys[2] {
+        if keys[2] || self.brain.is_none() && is_key_down(KeyCode::Up) {
             // THROTTLE
             self.acc = 0.14;
         }
-        if is_key_down(KeyCode::Space) || keys[3] {
+        if keys[3] || self.brain.is_none() && is_key_down(KeyCode::Space) {
             if self.last_shot > self.shot_interval {
                 self.last_shot = 0;
                 self.shots += 1;

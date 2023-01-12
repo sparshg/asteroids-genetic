@@ -23,6 +23,7 @@ impl World {
         activ: Option<ActivationFunc>,
     ) -> Self {
         Self {
+            color: Color::new(1., 1., 1., if hlayers.is_none() { 0.8 } else { 0.4 }),
             player: Player::new(hlayers, mut_rate, activ),
             score: 1.,
             asteroids: vec![
@@ -32,13 +33,13 @@ impl World {
                 Asteroid::new(AsteroidSize::Large),
                 Asteroid::new(AsteroidSize::Large),
             ],
-            color: Color::new(1., 1., 1., 0.4),
             ..Default::default()
         }
     }
     pub fn simulate(brain: NN) -> Self {
         let mut w = World::new(None, None, None);
         w.player.brain = Some(brain);
+        w.color = Color::new(1., 1., 1., 0.4);
         w
     }
 
