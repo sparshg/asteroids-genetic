@@ -29,11 +29,12 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     rand::srand(macroquad::miniquad::date::now() as _);
-    let pause = load_texture("assets/pause.png").await.unwrap();
-    let play = load_texture("assets/play.png").await.unwrap();
-    let fast = load_texture("assets/fast.png").await.unwrap();
-    let slow = load_texture("assets/slow.png").await.unwrap();
-    let restart = load_texture("assets/restart.png").await.unwrap();
+
+    let pause = Texture2D::from_file_with_format(include_bytes!("../assets/pause.png"), None);
+    let play = Texture2D::from_file_with_format(include_bytes!("../assets/play.png"), None);
+    let fast = Texture2D::from_file_with_format(include_bytes!("../assets/fast.png"), None);
+    let slow = Texture2D::from_file_with_format(include_bytes!("../assets/slow.png"), None);
+    let restart = Texture2D::from_file_with_format(include_bytes!("../assets/restart.png"), None);
     let th = (screen_height() - HEIGHT) * 0.5;
 
     let gamecam = Camera2D {
