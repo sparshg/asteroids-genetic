@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 mod asteroids;
 mod nn;
 mod player;
