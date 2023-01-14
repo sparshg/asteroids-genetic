@@ -96,7 +96,7 @@ impl Player {
         //         .unwrap();
         //     }
         // }
-        if asteroid.check_collision(self.pos, 8.) || self.lifespan > 4000 && self.brain.is_some() {
+        if asteroid.check_collision(self.pos, 8.) || self.lifespan > 3600 && self.brain.is_some() {
             self.alive = false;
             return true;
         }
