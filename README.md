@@ -6,3 +6,4 @@ Train your own AI to play asteroids game using neural networks and genetic algor
 
 ![](assets/demo.png)
 
+(The testing branch contains incomplete flappy birds AI)
