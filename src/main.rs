@@ -238,12 +238,6 @@ async fn main() {
     loop {
         clear_background(BLACK);
         set_camera(&gamecam);
-        if is_key_pressed(KeyCode::S) {
-            speedup = (speedup * 10) % 9999;
-        }
-        if is_key_pressed(KeyCode::P) {
-            paused = !paused;
-        }
         if !paused {
             for _ in 0..speedup {
                 if !human {
@@ -359,19 +353,21 @@ async fn main() {
                             }
                         }
                         ui.same_line(0.);
-                        if widgets::Button::new(slow).ui(ui) {
+                        if widgets::Button::new(slow).ui(ui) || is_key_pressed(KeyCode::Z) {
                             speedup = std::cmp::max(speedup / 10, 1);
                         };
                         ui.same_line(0.);
-                        if widgets::Button::new("1x").ui(ui) {
+                        if widgets::Button::new("1x").ui(ui) || is_key_pressed(KeyCode::X) {
                             speedup = 1;
                         };
                         ui.same_line(0.);
-                        if widgets::Button::new(fast).ui(ui) {
+                        if widgets::Button::new(fast).ui(ui) || is_key_pressed(KeyCode::C) {
                             speedup = std::cmp::min(speedup * 10, 1000);
                         };
                         ui.same_line(0.);
-                        if widgets::Button::new(if paused { play } else { pause }).ui(ui) {
+                        if widgets::Button::new(if paused { play } else { pause }).ui(ui)
+                            || is_key_pressed(KeyCode::P)
+                        {
                             paused = !paused;
                         };
                     });
@@ -390,22 +386,25 @@ async fn main() {
                         ui.same_line(279.);
                         if widgets::Button::new(if pop.debug { "Debug:ON " } else { "Debug:OFF" })
                             .ui(ui)
+                            || is_key_pressed(KeyCode::D)
                         {
                             pop.debug = !pop.debug;
                         };
                         ui.same_line(0.);
                         if widgets::Button::new(if bias { "Hide Bias" } else { "Show Bias" }).ui(ui)
+                            || is_key_pressed(KeyCode::B)
                         {
                             bias = !bias;
                         };
                         ui.same_line(0.);
                         if widgets::Button::new(if !pop.focus { "Focus:OFF" } else { "Focus:ON " })
                             .ui(ui)
+                            || is_key_pressed(KeyCode::F)
                         {
                             pop.focus = !pop.focus;
                         };
                         ui.same_line(0.);
-                        if widgets::Button::new(restart).ui(ui) {
+                        if widgets::Button::new(restart).ui(ui) || is_key_pressed(KeyCode::R) {
                             if human {
                                 world = World::new(None, None, None);
                             } else {

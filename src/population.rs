@@ -66,12 +66,6 @@ impl Population {
             self.gen += 1;
             self.next_gen();
         }
-        if is_key_pressed(KeyCode::Z) {
-            self.focus = !self.focus;
-        }
-        if is_key_pressed(KeyCode::D) {
-            self.debug = !self.debug;
-        }
     }
 
     pub fn change_track(&mut self, pos: Vec2) {
