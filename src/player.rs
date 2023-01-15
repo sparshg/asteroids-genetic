@@ -20,6 +20,7 @@ pub struct Player {
     inputs: Vec<f32>,
     pub outputs: Vec<f32>,
     // asteroid_data: Vec<(f32, f32, f32)>,
+    raycasts: Vec<f32>,
     last_shot: u32,
     shot_interval: u32,
     pub brain: Option<NN>,
@@ -38,7 +39,9 @@ impl Player {
             brain: match config {
                 Some(mut c) => {
                     c.retain(|&x| x != 0);
+                    // Number of inputs
                     c.insert(0, 5);
+                    // Number of outputs
                     c.push(4);
                     Some(NN::new(c, mut_rate.unwrap(), activ.unwrap()))
                 }
@@ -53,6 +56,7 @@ impl Player {
             alive: true,
             shots: 4,
             outputs: vec![0.; 4],
+            raycasts: vec![0.; 8],
 
             ..Default::default()
         }
@@ -90,8 +94,8 @@ impl Player {
         //     if cross.abs() <= asteroid.radius {
         //         self.raycasts[if dot >= 0. { i } else { i + 4 }] = *partial_max(
         //             &self.raycasts[if dot >= 0. { i } else { i + 4 }],
-        //             &(1. / (dot.abs()
-        //                 - (asteroid.radius * asteroid.radius - cross * cross).sqrt())),
+        //             &(100.
+        //                 / (dot.abs() - (asteroid.radius * asteroid.radius - cross * cross).sqrt())),
         //         )
         //         .unwrap();
         //     }
@@ -128,7 +132,11 @@ impl Player {
                 (ast.vel - self.vel).x * 0.6,
                 (ast.vel - self.vel).y * 0.6,
                 self.rot / TAU as f32,
+                // self.vel.x / 8.,
+                // self.vel.y / 8.,
+                // self.rot / TAU as f32,
             ];
+            // self.inputs.append(self.raycasts.as_mut());
 
             // self.asteroid_data
             //     .sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
@@ -183,13 +191,6 @@ impl Player {
             }
         }
 
-        // if is_key_pressed(KeyCode::D) {
-        //     self.debug = !self.debug;
-        // }
-        // if is_key_pressed(KeyCode::S) {
-        //     self.debug = false;
-        // }
-
         self.vel += self.acc * self.dir - self.drag * self.vel.length() * self.vel;
         self.pos += self.vel;
         if self.pos.x.abs() > WIDTH * 0.5 + 10. {
@@ -206,6 +207,7 @@ impl Player {
             .retain(|b| b.alive && b.pos.x.abs() * 2. < WIDTH && b.pos.y.abs() * 2. < HEIGHT);
         self.asteroid = None;
         // self.asteroid_data.clear();
+        // self.raycasts = vec![0.; 8];
     }
 
     pub fn draw(&self, color: Color, debug: bool) {
@@ -240,8 +242,8 @@ impl Player {
             //     draw_line(
             //         self.pos.x,
             //         self.pos.y,
-            //         self.pos.x + dir.x / r,
-            //         self.pos.y + dir.y / r,
+            //         self.pos.x + dir.x * 100. / r,
+            //         self.pos.y + dir.y * 100. / r,
             //         1.,
             //         GRAY,
             //     );
