@@ -23,7 +23,8 @@ pub const HEIGHT: f32 = 780.;
 fn window_conf() -> Conf {
     Conf {
         window_title: "Asteroids".to_string(),
-        // fullscreen: true,
+        fullscreen: false,
+        window_resizable: false,
         window_width: 1400,
         window_height: 800,
         ..Default::default()
