@@ -15,6 +15,7 @@ use macroquad::{
     ui::{hash, root_ui, widgets},
 };
 use population::{AutoSwitch, Population};
+use tinyfiledialogs::{open_file_dialog, save_file_dialog};
 use world::World;
 
 pub const WIDTH: f32 = 800.;
@@ -185,39 +186,39 @@ async fn main() {
                         ui.pop_skin();
                         ui.same_line(242.);
                         if widgets::Button::new("Load Model").ui(ui) {
-                            // if let Some(path) = open_file_dialog("Load Model", "model.json", None) {
-                            //     let brain = NN::import(&path);
-                            //     size = 1;
-                            //     hlayers = brain
-                            //         .config
-                            //         .iter()
-                            //         .take(brain.config.len() - 1)
-                            //         .skip(1)
-                            //         .map(|x| x - 1)
-                            //         .collect::<Vec<_>>();
-                            //     hlayers.resize(3, 0);
-                            //     mut_rate = brain.mut_rate;
-                            //     activ = activs.iter().position(|&x| x == brain.activ_func).unwrap();
+                            if let Some(path) = open_file_dialog("Load Model", "model.json", None) {
+                                let brain = NN::import(&path);
+                                size = 1;
+                                hlayers = brain
+                                    .config
+                                    .iter()
+                                    .take(brain.config.len() - 1)
+                                    .skip(1)
+                                    .map(|x| x - 1)
+                                    .collect::<Vec<_>>();
+                                hlayers.resize(3, 0);
+                                mut_rate = brain.mut_rate;
+                                activ = activs.iter().position(|&x| x == brain.activ_func).unwrap();
 
-                            //     prev_hlayers = hlayers.clone();
-                            //     prev_mut_rate = mut_rate;
-                            //     prev_activ = activ;
+                                prev_hlayers = hlayers.clone();
+                                prev_mut_rate = mut_rate;
+                                prev_activ = activ;
 
-                            //     pop = Population::new(
-                            //         size as usize,
-                            //         auto_switch,
-                            //         hlayers.clone(),
-                            //         mut_rate,
-                            //         activs[activ],
-                            //     );
-                            //     pop.worlds[0] = World::simulate(brain);
-                            // }
+                                pop = Population::new(
+                                    size as usize,
+                                    auto_switch,
+                                    hlayers.clone(),
+                                    mut_rate,
+                                    activs[activ],
+                                );
+                                pop.worlds[0] = World::simulate(brain);
+                            }
                         }
                         ui.same_line(0.);
                         if widgets::Button::new("Save Model").ui(ui) {
-                            // if let Some(path) = save_file_dialog("Save Model", "model.json") {
-                            //     pop.worlds[pop.track].export_brain(&path);
-                            // }
+                            if let Some(path) = save_file_dialog("Save Model", "model.json") {
+                                pop.worlds[pop.track].export_brain(&path);
+                            }
                         }
                         ui.same_line(0.);
                         if widgets::Button::new(slow).ui(ui) || is_key_pressed(KeyCode::Z) {
@@ -317,31 +318,25 @@ async fn main() {
                         ui.push_skin(&skin3);
                         ui.button(None, "Best Alive");
                         ui.pop_skin();
-                    } else {
-                        if ui.button(None, "Best Alive") {
-                            auto_switch = Some(AutoSwitch::BestAlive);
-                            pop.auto_switch = auto_switch;
-                        }
+                    } else if ui.button(None, "Best Alive") {
+                        auto_switch = Some(AutoSwitch::BestAlive);
+                        pop.auto_switch = auto_switch;
                     }
                     if auto_switch == Some(AutoSwitch::Best) {
                         ui.push_skin(&skin3);
                         ui.button(None, "Current #1");
                         ui.pop_skin();
-                    } else {
-                        if ui.button(None, "Current #1") {
-                            auto_switch = Some(AutoSwitch::Best);
-                            pop.auto_switch = auto_switch;
-                        }
+                    } else if ui.button(None, "Current #1") {
+                        auto_switch = Some(AutoSwitch::Best);
+                        pop.auto_switch = auto_switch;
                     }
                     if auto_switch.is_none() {
                         ui.push_skin(&skin3);
                         ui.button(None, "Do Nothing");
                         ui.pop_skin();
-                    } else {
-                        if ui.button(None, "Do Nothing") {
-                            auto_switch = None;
-                            pop.auto_switch = auto_switch;
-                        }
+                    } else if ui.button(None, "Do Nothing") {
+                        auto_switch = None;
+                        pop.auto_switch = auto_switch;
                     }
                 });
                 widgets::Group::new(

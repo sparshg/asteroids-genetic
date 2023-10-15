@@ -184,7 +184,7 @@ impl World {
             -width * 0.5 + 20.,
             55.,
             {
-                let mut p = params.clone();
+                let mut p = params;
                 p.color = if self.over { RED } else { GREEN };
                 p
             },
@@ -217,7 +217,7 @@ impl World {
         let w = measure_text(str, None, 64, 0.5);
 
         draw_text_ex(str, -w.width * 0.5, -height * 0.35, {
-            let mut p = params.clone();
+            let mut p = params;
             p.font_size = 64;
             p
         });

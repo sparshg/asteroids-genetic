@@ -129,8 +129,8 @@ impl Player {
             self.inputs = vec![
                 (ast.pos - self.pos).length() / HEIGHT,
                 self.dir.angle_between(ast.pos - self.pos),
-                (ast.vel - self.vel).x * 0.6,
-                (ast.vel - self.vel).y * 0.6,
+                (ast.vel - self.vel).x * 0.3,
+                (ast.vel - self.vel).y * 0.3,
                 self.rot / TAU as f32,
                 // self.vel.x / 8.,
                 // self.vel.y / 8.,
@@ -179,16 +179,14 @@ impl Player {
             // THROTTLE
             self.acc = 0.14;
         }
-        if keys[3] || self.brain.is_none() && is_key_down(KeyCode::Space) {
-            if self.last_shot > self.shot_interval {
-                self.last_shot = 0;
-                self.shots += 1;
-                self.bullets.push(Bullet {
-                    pos: self.pos + self.dir * 20.,
-                    vel: self.dir * 8.5 + self.vel,
-                    alive: true,
-                });
-            }
+        if (keys[3] || self.brain.is_none() && is_key_down(KeyCode::Space)) && self.last_shot > self.shot_interval {
+            self.last_shot = 0;
+            self.shots += 1;
+            self.bullets.push(Bullet {
+                pos: self.pos + self.dir * 20.,
+                vel: self.dir * 8.5 + self.vel,
+                alive: true,
+            });
         }
 
         self.vel += self.acc * self.dir - self.drag * self.vel.length() * self.vel;
