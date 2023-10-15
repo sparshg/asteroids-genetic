@@ -15,6 +15,7 @@ use macroquad::{
     ui::{hash, root_ui, widgets},
 };
 use population::{AutoSwitch, Population};
+use tinyfiledialogs::{open_file_dialog, save_file_dialog};
 use world::World;
 
 pub const WIDTH: f32 = 800.;
@@ -317,31 +318,25 @@ async fn main() {
                         ui.push_skin(&skin3);
                         ui.button(None, "Best Alive");
                         ui.pop_skin();
-                    } else {
-                        if ui.button(None, "Best Alive") {
-                            auto_switch = Some(AutoSwitch::BestAlive);
-                            pop.auto_switch = auto_switch;
-                        }
+                    } else if ui.button(None, "Best Alive") {
+                        auto_switch = Some(AutoSwitch::BestAlive);
+                        pop.auto_switch = auto_switch;
                     }
                     if auto_switch == Some(AutoSwitch::Best) {
                         ui.push_skin(&skin3);
                         ui.button(None, "Current #1");
                         ui.pop_skin();
-                    } else {
-                        if ui.button(None, "Current #1") {
-                            auto_switch = Some(AutoSwitch::Best);
-                            pop.auto_switch = auto_switch;
-                        }
+                    } else if ui.button(None, "Current #1") {
+                        auto_switch = Some(AutoSwitch::Best);
+                        pop.auto_switch = auto_switch;
                     }
                     if auto_switch.is_none() {
                         ui.push_skin(&skin3);
                         ui.button(None, "Do Nothing");
                         ui.pop_skin();
-                    } else {
-                        if ui.button(None, "Do Nothing") {
-                            auto_switch = None;
-                            pop.auto_switch = auto_switch;
-                        }
+                    } else if ui.button(None, "Do Nothing") {
+                        auto_switch = None;
+                        pop.auto_switch = auto_switch;
                     }
                 });
                 widgets::Group::new(

@@ -37,6 +37,7 @@ impl NN {
                 .map(|(&curr, &last)| {
                     // DMatrix::from_fn(last, curr + 1, |_, _| gen_range(-1., 1.))
                     DMatrix::from_fn(last, curr + 1, |_, _| {
+                        // uniform random to standard normal
                         (-2. * gen_range(0., 1.).ln()).sqrt() * (PI * gen_range(0., 2.)).cos()
                     }) * (2. / last as f32).sqrt()
                 })
@@ -72,6 +73,7 @@ impl NN {
             for ele in weight {
                 if gen_range(0., 1.) < self.mut_rate {
                     // *ele += gen_range(-1., 1.);
+                    // uniform random to standard normal
                     *ele = (-2. * gen_range(0., 1.).ln()).sqrt() * (PI * gen_range(0., 2.)).cos();
                 }
             }
@@ -106,7 +108,7 @@ impl NN {
             .iter()
             .take(self.config.len() - 1)
             .map(|x| x - if bias { 0 } else { 1 })
-            .chain(self.config.last().map(|&x| x))
+            .chain(self.config.last().copied())
             .enumerate()
         {
             p1s = p2s;

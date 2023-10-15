@@ -150,9 +150,9 @@ impl Population {
         let total = self.worlds.iter().fold(0., |acc, x| acc + x.fitness);
         self.worlds
             .sort_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
-        for i in &self.worlds {
-            println!("Fitness: {}", i.fitness);
-        }
+        // for i in &self.worlds {
+        //     println!("Fitness: {}", i.fitness);
+        // }
         println!("Gen: {}, Fitness: {}", self.gen, self.worlds[0].fitness);
         let mut new_worlds = (0..std::cmp::max(1, self.size / 20))
             .map(|i| World::simulate(self.worlds[i].see_brain().to_owned()))
