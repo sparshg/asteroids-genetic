@@ -3,7 +3,6 @@ use macroquad::{prelude::*, rand::gen_range};
 use crate::{
     nn::{ActivationFunc, NN},
     world::World,
-    HEIGHT, WIDTH,
 };
 
 #[derive(Clone, Copy, PartialEq)]
@@ -31,12 +30,20 @@ impl Population {
         hlayers: Vec<usize>,
         mut_rate: f32,
         activ: ActivationFunc,
+        (WIDTH, HEIGHT): (f32, f32),
     ) -> Self {
         let mut s = Self {
             size,
             hlayers: hlayers.clone(),
             worlds: (0..size)
-                .map(|_| World::new(Some(hlayers.clone()), Some(mut_rate), Some(activ)))
+                .map(|_| {
+                    World::new(
+                        Some(hlayers.clone()),
+                        Some(mut_rate),
+                        Some(activ),
+                        (WIDTH, HEIGHT),
+                    )
+                })
                 .collect(),
             auto_switch,
             focus: true,
@@ -46,12 +53,12 @@ impl Population {
         s
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, (WIDTH, HEIGHT): (f32, f32)) {
         let mut alive = false;
         for world in &mut self.worlds {
             if !world.over {
                 alive = true;
-                world.update();
+                world.update((WIDTH, HEIGHT));
             }
         }
         if self.worlds[self.track].over {
@@ -64,7 +71,7 @@ impl Population {
         }
         if !alive {
             self.gen += 1;
-            self.next_gen();
+            self.next_gen((WIDTH, HEIGHT));
         }
     }
 
@@ -113,7 +120,7 @@ impl Population {
         }
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&self, (WIDTH, HEIGHT, SWIDTH, SHEIGHT): (f32, f32, f32, f32)) {
         for world in self.worlds.iter().rev() {
             if self.focus {
                 if world.track {
@@ -123,30 +130,18 @@ impl Population {
                 world.draw(self.debug);
             }
         }
-        self.draw_borders();
+        self.draw_borders((WIDTH, HEIGHT, SWIDTH, SHEIGHT));
     }
 
-    pub fn draw_borders(&self) {
-        let th = (screen_height() - HEIGHT) * 0.5;
-        draw_rectangle(-WIDTH * 0.5, -screen_height() * 0.5, WIDTH, th, BLACK);
-        draw_rectangle(-WIDTH * 0.5, screen_height() * 0.5 - th, WIDTH, th, BLACK);
-        draw_rectangle(
-            -WIDTH * 0.5 - th,
-            -screen_height() * 0.5,
-            th,
-            screen_height(),
-            BLACK,
-        );
-        draw_rectangle(
-            WIDTH * 0.5,
-            -screen_height() * 0.5,
-            screen_width() - WIDTH,
-            screen_height(),
-            BLACK,
-        );
+    pub fn draw_borders(&self, (WIDTH, HEIGHT, SWIDTH, SHEIGHT): (f32, f32, f32, f32)) {
+        let th = (SHEIGHT - HEIGHT) * 0.5;
+        draw_rectangle(-WIDTH * 0.5, -SHEIGHT * 0.5, WIDTH, th, BLACK);
+        draw_rectangle(-WIDTH * 0.5, SHEIGHT * 0.5 - th, WIDTH, th, BLACK);
+        draw_rectangle(-WIDTH * 0.5 - th, -SHEIGHT * 0.5, th, SHEIGHT, BLACK);
+        draw_rectangle(WIDTH * 0.5, -SHEIGHT * 0.5, SWIDTH - WIDTH, SHEIGHT, BLACK);
     }
 
-    pub fn next_gen(&mut self) {
+    pub fn next_gen(&mut self, (WIDTH, HEIGHT): (f32, f32)) {
         let total = self.worlds.iter().fold(0., |acc, x| acc + x.fitness);
         self.worlds
             .sort_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
@@ -155,7 +150,7 @@ impl Population {
         // }
         println!("Gen: {}, Fitness: {}", self.gen, self.worlds[0].fitness);
         let mut new_worlds = (0..std::cmp::max(1, self.size / 20))
-            .map(|i| World::simulate(self.worlds[i].see_brain().to_owned()))
+            .map(|i| World::simulate(self.worlds[i].see_brain().to_owned(), (WIDTH, HEIGHT)))
             .collect::<Vec<_>>();
         while new_worlds.len() < self.size {
             let rands = (gen_range(0., total), gen_range(0., total));
@@ -178,7 +173,7 @@ impl Population {
             }
             let mut new_brain = NN::crossover(a.unwrap(), b.unwrap());
             new_brain.mutate();
-            new_worlds.push(World::simulate(new_brain));
+            new_worlds.push(World::simulate(new_brain, (WIDTH, HEIGHT)));
         }
         self.worlds = new_worlds;
         self.worlds[0].track(true);

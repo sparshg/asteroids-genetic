@@ -21,23 +21,24 @@ impl World {
         hlayers: Option<Vec<usize>>,
         mut_rate: Option<f32>,
         activ: Option<ActivationFunc>,
+        (WIDTH, HEIGHT): (f32, f32),
     ) -> Self {
         Self {
             color: Color::new(1., 1., 1., if hlayers.is_none() { 0.8 } else { 0.4 }),
             player: Player::new(hlayers, mut_rate, activ),
             score: 1.,
             asteroids: vec![
-                Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large),
-                Asteroid::new(AsteroidSize::Large),
-                Asteroid::new(AsteroidSize::Large),
-                Asteroid::new(AsteroidSize::Large),
-                Asteroid::new(AsteroidSize::Large),
+                Asteroid::new_to(vec2(0., 0.), 1.5, AsteroidSize::Large, (WIDTH, HEIGHT)),
+                Asteroid::new(AsteroidSize::Large, (WIDTH, HEIGHT)),
+                Asteroid::new(AsteroidSize::Large, (WIDTH, HEIGHT)),
+                Asteroid::new(AsteroidSize::Large, (WIDTH, HEIGHT)),
+                Asteroid::new(AsteroidSize::Large, (WIDTH, HEIGHT)),
             ],
             ..Default::default()
         }
     }
-    pub fn simulate(brain: NN) -> Self {
-        let mut w = World::new(None, None, None);
+    pub fn simulate(brain: NN, (WIDTH, HEIGHT): (f32, f32)) -> Self {
+        let mut w = World::new(None, None, None, (WIDTH, HEIGHT));
         w.player.brain = Some(brain);
         w.color = Color::new(1., 1., 1., 0.4);
         w
@@ -61,11 +62,11 @@ impl World {
         std::fs::write(path, json).expect("Unable to write file");
     }
 
-    pub fn update(&mut self) {
-        self.player.update();
+    pub fn update(&mut self, (WIDTH, HEIGHT): (f32, f32)) {
+        self.player.update((WIDTH, HEIGHT));
         let mut to_add: Vec<Asteroid> = Vec::new();
         for asteroid in &mut self.asteroids {
-            asteroid.update();
+            asteroid.update((WIDTH, HEIGHT));
             if self.player.check_bullet_collisions(asteroid) {
                 self.score += 1.;
                 match asteroid.size {
@@ -75,11 +76,13 @@ impl World {
                             asteroid.pos,
                             asteroid.vel + rand,
                             AsteroidSize::Medium,
+                            (WIDTH, HEIGHT),
                         ));
                         to_add.push(Asteroid::new_from(
                             asteroid.pos,
                             asteroid.vel - rand,
                             AsteroidSize::Medium,
+                            (WIDTH, HEIGHT),
                         ));
                     }
                     AsteroidSize::Medium => {
@@ -88,11 +91,13 @@ impl World {
                             asteroid.pos,
                             asteroid.vel + rand,
                             AsteroidSize::Small,
+                            (WIDTH, HEIGHT),
                         ));
                         to_add.push(Asteroid::new_from(
                             asteroid.pos,
                             asteroid.vel - rand,
                             AsteroidSize::Small,
+                            (WIDTH, HEIGHT),
                         ));
                     }
                     _ => {}
@@ -116,8 +121,12 @@ impl World {
         //     || self.player.lifespan % 200 == 0
         // {
         if self.player.lifespan % 200 == 0 {
-            self.asteroids
-                .push(Asteroid::new_to(self.player.pos, 1.5, AsteroidSize::Large));
+            self.asteroids.push(Asteroid::new_to(
+                self.player.pos,
+                1.5,
+                AsteroidSize::Large,
+                (WIDTH, HEIGHT),
+            ));
         }
     }
 

@@ -15,11 +15,8 @@ use macroquad::{
     ui::{hash, root_ui, widgets},
 };
 use population::{AutoSwitch, Population};
-use tinyfiledialogs::{open_file_dialog, save_file_dialog};
+// use tinyfiledialogs::{open_file_dialog, save_file_dialog};
 use world::World;
-
-pub const WIDTH: f32 = 800.;
-pub const HEIGHT: f32 = 780.;
 
 fn window_conf() -> Conf {
     Conf {
@@ -34,33 +31,31 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     rand::srand(macroquad::miniquad::date::now() as _);
+    let SWIDTH: f32 = screen_width();
+    let SHEIGHT: f32 = screen_height();
+    let WIDTH: f32 = SWIDTH * (800. / 1400.);
+    let HEIGHT: f32 = SHEIGHT * (780. / 800.);
 
     let pause = Texture2D::from_file_with_format(include_bytes!("../assets/pause.png"), None);
     let play = Texture2D::from_file_with_format(include_bytes!("../assets/play.png"), None);
     let fast = Texture2D::from_file_with_format(include_bytes!("../assets/fast.png"), None);
     let slow = Texture2D::from_file_with_format(include_bytes!("../assets/slow.png"), None);
     let restart = Texture2D::from_file_with_format(include_bytes!("../assets/restart.png"), None);
-    let th = (screen_height() - HEIGHT) * 0.5;
+    let th = (SHEIGHT - HEIGHT) * 0.5;
 
     let gamecam = Camera2D {
-        zoom: vec2(2. / screen_width(), -2. / screen_height()),
-        offset: vec2((2. * th + WIDTH) / screen_width() - 1., 0.),
+        zoom: vec2(2. / SWIDTH, -2. / SHEIGHT),
+        offset: vec2((2. * th + WIDTH) / SWIDTH - 1., 0.),
         ..Default::default()
     };
     let netcam = Camera2D {
-        zoom: vec2(2. / screen_width(), -2. / screen_height()),
-        offset: vec2(
-            (th + WIDTH) / screen_width(),
-            -((th + HEIGHT) * 0.5) / screen_height(),
-        ),
+        zoom: vec2(2. / SWIDTH, -2. / SHEIGHT),
+        offset: vec2((th + WIDTH) / SWIDTH, -((th + HEIGHT) * 0.5) / SHEIGHT),
         ..Default::default()
     };
     let statcam = Camera2D {
-        zoom: vec2(2. / screen_width(), -2. / screen_height()),
-        offset: vec2(
-            (th + WIDTH) / screen_width(),
-            ((th + HEIGHT) * 0.5) / screen_height(),
-        ),
+        zoom: vec2(2. / SWIDTH, -2. / SHEIGHT),
+        offset: vec2((th + WIDTH) / SWIDTH, ((th + HEIGHT) * 0.5) / SHEIGHT),
         ..Default::default()
     };
 
@@ -69,7 +64,7 @@ async fn main() {
     let mut bias = false;
     let mut human = false;
     let mut size: u32 = 100;
-    let mut world: World = World::new(None, None, None);
+    let mut world: World = World::new(None, None, None, (WIDTH, HEIGHT));
 
     let mut hlayers: Vec<usize> = vec![6, 6, 0];
     let mut prev_hlayers = hlayers.clone();
@@ -92,6 +87,7 @@ async fn main() {
         hlayers.clone(),
         mut_rate,
         activs[activ],
+        (WIDTH, HEIGHT),
     );
 
     let ui_thick = 34.;
@@ -109,31 +105,31 @@ async fn main() {
         if !paused {
             for _ in 0..speedup {
                 if !human {
-                    pop.update()
+                    pop.update((WIDTH, HEIGHT))
                 } else if !world.over {
-                    world.update()
+                    world.update((WIDTH, HEIGHT))
                 };
             }
         }
         if human {
             world.draw(pop.debug);
-            pop.draw_borders();
+            pop.draw_borders((WIDTH, HEIGHT, SWIDTH, SHEIGHT));
         } else {
-            pop.draw();
+            pop.draw((WIDTH, HEIGHT, SWIDTH, SHEIGHT));
         }
         draw_rectangle_lines(-WIDTH * 0.5, -HEIGHT * 0.5, WIDTH, HEIGHT, 2., WHITE);
         draw_rectangle_lines(
             WIDTH * 0.5 + th,
             -HEIGHT * 0.5,
-            screen_width() - WIDTH - 3. * th,
+            SWIDTH - WIDTH - 3. * th,
             ui_thick,
             2.,
             WHITE,
         );
         draw_rectangle_lines(
             WIDTH * 0.5 + th,
-            -HEIGHT * 0.5 + (screen_height() - 3. * th) * 0.5 - ui_thick,
-            screen_width() - WIDTH - 3. * th,
+            -HEIGHT * 0.5 + (SHEIGHT - 3. * th) * 0.5 - ui_thick,
+            SWIDTH - WIDTH - 3. * th,
             ui_thick,
             2.,
             WHITE,
@@ -141,8 +137,8 @@ async fn main() {
 
         set_camera(&netcam);
         pop.worlds[pop.track].player.draw_brain(
-            screen_width() - WIDTH - 3. * th,
-            (screen_height() - 3. * th) * 0.5,
+            SWIDTH - WIDTH - 3. * th,
+            (SHEIGHT - 3. * th) * 0.5,
             bias,
         );
         set_camera(&statcam);
@@ -152,8 +148,8 @@ async fn main() {
             &pop.worlds[pop.track]
         };
         w.draw_stats(
-            screen_width() - WIDTH - 3. * th,
-            (screen_height() - 7. * th) * 0.5 - 2. * ui_thick,
+            SWIDTH - WIDTH - 3. * th,
+            (SHEIGHT - 7. * th) * 0.5 - 2. * ui_thick,
             pop.worlds.iter().fold(1, |acc, w| {
                 acc + if w.fitness > pop.worlds[pop.track].fitness {
                     1
@@ -170,8 +166,8 @@ async fn main() {
             pop.change_track(vec2(x - th - WIDTH * 0.5, y - th - HEIGHT * 0.5));
         }
 
-        let ui_width = screen_width() - WIDTH - 3. * th + 1.;
-        let ui_height = (screen_height() - 3. * th) * 0.5;
+        let ui_width = SWIDTH - WIDTH - 3. * th + 1.;
+        let ui_height = (SHEIGHT - 3. * th) * 0.5;
         root_ui().window(
             hash!(),
             vec2(WIDTH + 2. * th, th),
@@ -182,9 +178,10 @@ async fn main() {
                     .ui(ui, |ui| {
                         ui.label(None, &format!("Generation: {}", pop.gen));
                         ui.push_skin(&skin2);
-                        ui.label(vec2(200., 8.), &format!("{: >4}x", speedup));
+                        ui.label(vec2(ui_width - 371., 8.), &format!("{: >4}x", speedup));
                         ui.pop_skin();
-                        ui.same_line(242.);
+                        // ui.same_line(242.);
+                        ui.same_line(ui_width - 329.);
                         if widgets::Button::new("Load Model").ui(ui) {
                             if let Some(path) = open_file_dialog("Load Model", "model.json", None) {
                                 let brain = NN::import(&path);
@@ -249,9 +246,9 @@ async fn main() {
                                 ui.drag(hash!(), "", Some((1, 300)), &mut size);
                             });
                         ui.push_skin(&skin2);
-                        ui.label(Some(vec2(230., ui_thick * 0.5 - 7.)), "«Drag»");
+                        ui.label(Some(vec2(ui_width - 341., ui_thick * 0.5 - 7.)), "«Drag»");
                         ui.pop_skin();
-                        ui.same_line(279.);
+                        ui.same_line(ui_width - 292.);
                         if widgets::Button::new(if pop.debug { "Debug:ON " } else { "Debug:OFF" })
                             .ui(ui)
                             || is_key_pressed(KeyCode::D)
@@ -274,7 +271,7 @@ async fn main() {
                         ui.same_line(0.);
                         if widgets::Button::new(restart).ui(ui) || is_key_pressed(KeyCode::R) {
                             if human {
-                                world = World::new(None, None, None);
+                                world = World::new(None, None, None, (WIDTH, HEIGHT));
                             } else {
                                 pop = Population::new(
                                     size as usize,
@@ -282,6 +279,7 @@ async fn main() {
                                     hlayers.clone(),
                                     mut_rate,
                                     activs[activ],
+                                    (WIDTH, HEIGHT),
                                 );
                             }
                         };
@@ -357,7 +355,7 @@ async fn main() {
                     ) {
                         human = !human;
                         if human {
-                            world = World::new(None, None, None);
+                            world = World::new(None, None, None, (WIDTH, HEIGHT));
                         } else {
                             pop = Population::new(
                                 size as usize,
@@ -365,6 +363,7 @@ async fn main() {
                                 hlayers.clone(),
                                 mut_rate,
                                 activs[activ],
+                                (WIDTH, HEIGHT),
                             );
                         }
                     }
@@ -395,6 +394,7 @@ async fn main() {
                             hlayers.clone(),
                             mut_rate,
                             activs[activ],
+                            (WIDTH, HEIGHT),
                         );
                         prev_hlayers = hlayers.clone();
                     }

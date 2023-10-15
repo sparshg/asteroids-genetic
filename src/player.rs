@@ -5,7 +5,6 @@ use macroquad::{prelude::*, rand::gen_range};
 use crate::{
     asteroids::Asteroid,
     nn::{ActivationFunc, NN},
-    HEIGHT, WIDTH,
 };
 #[derive(Default)]
 pub struct Player {
@@ -119,7 +118,7 @@ impl Player {
         false
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, (WIDTH, HEIGHT): (f32, f32)) {
         self.lifespan += 1;
         self.last_shot += 1;
         self.acc = 0.;
@@ -179,7 +178,9 @@ impl Player {
             // THROTTLE
             self.acc = 0.14;
         }
-        if (keys[3] || self.brain.is_none() && is_key_down(KeyCode::Space)) && self.last_shot > self.shot_interval {
+        if (keys[3] || self.brain.is_none() && is_key_down(KeyCode::Space))
+            && self.last_shot > self.shot_interval
+        {
             self.last_shot = 0;
             self.shots += 1;
             self.bullets.push(Bullet {
