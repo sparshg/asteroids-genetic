@@ -33,6 +33,7 @@ async fn main() {
     let fast = Texture2D::from_file_with_format(include_bytes!("../assets/fast.png"), None);
     let slow = Texture2D::from_file_with_format(include_bytes!("../assets/slow.png"), None);
     let restart = Texture2D::from_file_with_format(include_bytes!("../assets/restart.png"), None);
+
     next_frame().await;
 
     let SWIDTH: f32 = screen_width();
