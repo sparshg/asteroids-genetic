@@ -8,14 +8,13 @@ mod skins;
 mod world;
 
 use nn::{ActivationFunc, NN};
-// use tinyfiledialogs::*;
 
 use macroquad::{
     prelude::*,
     ui::{hash, root_ui, widgets},
 };
 use population::{AutoSwitch, Population};
-// use tinyfiledialogs::{open_file_dialog, save_file_dialog};
+use tinyfiledialogs::{open_file_dialog, save_file_dialog};
 use world::World;
 
 fn window_conf() -> Conf {
@@ -207,8 +206,9 @@ async fn main() {
                                     hlayers.clone(),
                                     mut_rate,
                                     activs[activ],
+                                    (WIDTH, HEIGHT),
                                 );
-                                pop.worlds[0] = World::simulate(brain);
+                                pop.worlds[0] = World::simulate(brain, (WIDTH, HEIGHT));
                             }
                         }
                         ui.same_line(0.);
