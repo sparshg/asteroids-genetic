@@ -1,4 +1,3 @@
-use crate::{HEIGHT, WIDTH};
 use macroquad::{prelude::*, rand::gen_range};
 #[derive(Clone)]
 pub enum AsteroidSize {
@@ -20,7 +19,7 @@ pub struct Asteroid {
 }
 
 impl Asteroid {
-    pub fn new(size: AsteroidSize) -> Self {
+    pub fn new(size: AsteroidSize, (WIDTH, HEIGHT): (f32, f32)) -> Self {
         let (sides, radius) = match size {
             AsteroidSize::Large => (gen_range(6, 10), gen_range(50., 65.)),
             AsteroidSize::Medium => (gen_range(5, 6), gen_range(35., 50.)),
@@ -50,15 +49,15 @@ impl Asteroid {
         }
     }
 
-    pub fn new_from(pos: Vec2, vel: Vec2, size: AsteroidSize) -> Self {
-        let mut asteroid = Asteroid::new(size);
+    pub fn new_from(pos: Vec2, vel: Vec2, size: AsteroidSize, (WIDTH, HEIGHT): (f32, f32)) -> Self {
+        let mut asteroid = Asteroid::new(size, (WIDTH, HEIGHT));
         asteroid.pos = pos;
         asteroid.vel = vel;
         asteroid
     }
 
-    pub fn new_to(pos: Vec2, speed: f32, size: AsteroidSize) -> Self {
-        let mut asteroid = Asteroid::new(size);
+    pub fn new_to(pos: Vec2, speed: f32, size: AsteroidSize, (WIDTH, HEIGHT): (f32, f32)) -> Self {
+        let mut asteroid = Asteroid::new(size, (WIDTH, HEIGHT));
         asteroid.vel = (pos - asteroid.pos) * 0.002 * speed;
         asteroid
     }
@@ -68,7 +67,7 @@ impl Asteroid {
             <= (self.radius + rad) * (self.radius + rad)
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, (WIDTH, HEIGHT): (f32, f32)) {
         self.pos += self.vel;
         self.rot += self.omega;
         if self.pos.x.abs() > WIDTH * 0.5 + self.radius {
