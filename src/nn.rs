@@ -1,9 +1,8 @@
+use std::f32::consts::PI;
+
 use macroquad::{prelude::*, rand::gen_range};
 use nalgebra::*;
-use r::Rng;
-use rand_distr::StandardNormal;
 use serde::{Deserialize, Serialize};
-extern crate rand as r;
 
 #[derive(PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 
@@ -24,8 +23,6 @@ pub struct NN {
 impl NN {
     // Vec of number of neurons in input, hidden 1, hidden 2, ..., output layers
     pub fn new(config: Vec<usize>, mut_rate: f32, activ: ActivationFunc) -> Self {
-        let mut rng = r::thread_rng();
-
         Self {
             config: config
                 .iter()
@@ -39,8 +36,9 @@ impl NN {
                 .zip(config.iter().skip(1))
                 .map(|(&curr, &last)| {
                     // DMatrix::from_fn(last, curr + 1, |_, _| gen_range(-1., 1.))
-                    DMatrix::<f32>::from_distribution(last, curr + 1, &StandardNormal, &mut rng)
-                        * (2. / last as f32).sqrt()
+                    DMatrix::from_fn(last, curr + 1, |_, _| {
+                        (-2. * gen_range(0., 1.).ln()).sqrt() * (PI * gen_range(0., 2.)).cos()
+                    }) * (2. / last as f32).sqrt()
                 })
                 .collect(),
 
@@ -74,8 +72,7 @@ impl NN {
             for ele in weight {
                 if gen_range(0., 1.) < self.mut_rate {
                     // *ele += gen_range(-1., 1.);
-                    // *ele = gen_range(-1., 1.);
-                    *ele = r::thread_rng().sample::<f32, StandardNormal>(StandardNormal);
+                    *ele = (-2. * gen_range(0., 1.).ln()).sqrt() * (PI * gen_range(0., 2.)).cos();
                 }
             }
         }
