@@ -20,26 +20,25 @@ use world::World;
 fn window_conf() -> Conf {
     Conf {
         window_title: "Asteroids".to_string(),
-        fullscreen: false,
-        window_resizable: false,
-        window_width: 1400,
-        window_height: 800,
+        fullscreen: true,
         ..Default::default()
     }
 }
 #[macroquad::main(window_conf)]
 async fn main() {
     rand::srand(macroquad::miniquad::date::now() as _);
-    let SWIDTH: f32 = screen_width();
-    let SHEIGHT: f32 = screen_height();
-    let WIDTH: f32 = SWIDTH * (800. / 1400.);
-    let HEIGHT: f32 = SHEIGHT * (780. / 800.);
 
     let pause = Texture2D::from_file_with_format(include_bytes!("../assets/pause.png"), None);
     let play = Texture2D::from_file_with_format(include_bytes!("../assets/play.png"), None);
     let fast = Texture2D::from_file_with_format(include_bytes!("../assets/fast.png"), None);
     let slow = Texture2D::from_file_with_format(include_bytes!("../assets/slow.png"), None);
     let restart = Texture2D::from_file_with_format(include_bytes!("../assets/restart.png"), None);
+    next_frame().await;
+
+    let SWIDTH: f32 = screen_width();
+    let SHEIGHT: f32 = screen_height();
+    let WIDTH: f32 = SWIDTH * (800. / 1400.);
+    let HEIGHT: f32 = SHEIGHT * (780. / 800.);
     let th = (SHEIGHT - HEIGHT) * 0.5;
 
     let gamecam = Camera2D {
@@ -99,6 +98,9 @@ async fn main() {
 
     root_ui().push_skin(&skin);
     loop {
+        if is_key_pressed(KeyCode::Q) || is_key_pressed(KeyCode::Escape) {
+            break;
+        }
         clear_background(BLACK);
         set_camera(&gamecam);
         if !paused {
