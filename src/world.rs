@@ -150,7 +150,7 @@ impl World {
         let scale = 2.5;
         let offset = vec2(-width * 0.3, -height * 0.1);
         let p1 = scale * vec2(0., -20.) + offset;
-        let p2 = scale * vec2(-12.667, 18.) + offset;
+        let p2: Vec2 = scale * vec2(-12.667, 18.) + offset;
         let p3 = scale * vec2(12.667, 18.) + offset;
         let p4 = scale * vec2(-10., 10.) + offset;
         let p5 = scale * vec2(10., 10.) + offset;
@@ -193,7 +193,7 @@ impl World {
             -width * 0.5 + 20.,
             55.,
             {
-                let mut p = params;
+                let mut p = params.clone();
                 p.color = if self.over { RED } else { GREEN };
                 p
             },
@@ -202,25 +202,25 @@ impl World {
             &format!("Hits: {}", self.score),
             -width * 0.5 + 20.,
             75.,
-            params,
+            params.clone(),
         );
         draw_text_ex(
             &format!("Fired: {}", self.player.shots),
             -width * 0.5 + 20.,
             95.,
-            params,
+            params.clone(),
         );
         draw_text_ex(
             &format!("Fitness: {:.2}", self.fitness),
             -width * 0.5 + 20.,
             115.,
-            params,
+            params.clone(),
         );
         draw_text_ex(
             &format!("Lifetime: {:.2}", self.player.lifespan as f32 / 60.),
             -width * 0.5 + 20.,
             135.,
-            params,
+            params.clone(),
         );
         let str = &format!("RANK #{}", rank);
         let w = measure_text(str, None, 64, 0.5);
