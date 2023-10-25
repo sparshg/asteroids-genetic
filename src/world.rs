@@ -183,52 +183,44 @@ impl World {
             draw_circle(l1.x, l1.y, 5., WHITE);
             draw_circle(l1.x, l1.y, 3.5, BLACK);
         }
-        let params = TextParams {
-            font_size: 48,
-            font_scale: 0.5,
-            ..Default::default()
-        };
-        draw_text_ex(
+        draw_text(
             if self.over { "DEAD" } else { "ALIVE" },
             -width * 0.5 + 20.,
             55.,
-            {
-                let mut p = params.clone();
-                p.color = if self.over { RED } else { GREEN };
-                p
-            },
+            24.,
+            if self.over { RED } else { GREEN },
         );
-        draw_text_ex(
+        draw_text(
             &format!("Hits: {}", self.score),
             -width * 0.5 + 20.,
             75.,
-            params.clone(),
+            24.,
+            WHITE,
         );
-        draw_text_ex(
+        draw_text(
             &format!("Fired: {}", self.player.shots),
             -width * 0.5 + 20.,
             95.,
-            params.clone(),
+            24.,
+            WHITE,
         );
-        draw_text_ex(
+        draw_text(
             &format!("Fitness: {:.2}", self.fitness),
             -width * 0.5 + 20.,
             115.,
-            params.clone(),
+            24.,
+            WHITE,
         );
-        draw_text_ex(
+        draw_text(
             &format!("Lifetime: {:.2}", self.player.lifespan as f32 / 60.),
             -width * 0.5 + 20.,
             135.,
-            params.clone(),
+            24.,
+            WHITE,
         );
         let str = &format!("RANK #{}", rank);
         let w = measure_text(str, None, 64, 0.5);
 
-        draw_text_ex(str, -w.width * 0.5, -height * 0.35, {
-            let mut p = params;
-            p.font_size = 64;
-            p
-        });
+        draw_text(str, -w.width * 0.5, -height * 0.35, 32., WHITE);
     }
 }
