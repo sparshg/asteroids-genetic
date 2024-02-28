@@ -192,9 +192,19 @@ impl NN {
             font_scale: 0.5,
             ..Default::default()
         };
-        draw_text_ex("-ve", width * 0.47 + 20., height * 0.47 + 10., params);
+        draw_text_ex(
+            "-ve",
+            width * 0.47 + 20.,
+            height * 0.47 + 10.,
+            params.clone(),
+        );
         draw_rectangle(width * 0.47, height * 0.47 + 20., 10., 10., WHITE);
-        draw_text_ex("+ve", width * 0.47 + 20., height * 0.47 + 30., params);
+        draw_text_ex(
+            "+ve",
+            width * 0.47 + 20.,
+            height * 0.47 + 30.,
+            params.clone(),
+        );
     }
 
     pub fn export(&self) -> String {

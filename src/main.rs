@@ -43,17 +43,17 @@ async fn main() {
     let th = (SHEIGHT - HEIGHT) * 0.5;
 
     let gamecam = Camera2D {
-        zoom: vec2(2. / SWIDTH, -2. / SHEIGHT),
+        zoom: vec2(2. / SWIDTH, 2. / SHEIGHT),
         offset: vec2((2. * th + WIDTH) / SWIDTH - 1., 0.),
         ..Default::default()
     };
     let netcam = Camera2D {
-        zoom: vec2(2. / SWIDTH, -2. / SHEIGHT),
+        zoom: vec2(2. / SWIDTH, 2. / SHEIGHT),
         offset: vec2((th + WIDTH) / SWIDTH, -((th + HEIGHT) * 0.5) / SHEIGHT),
         ..Default::default()
     };
     let statcam = Camera2D {
-        zoom: vec2(2. / SWIDTH, -2. / SHEIGHT),
+        zoom: vec2(2. / SWIDTH, 2. / SHEIGHT),
         offset: vec2((th + WIDTH) / SWIDTH, ((th + HEIGHT) * 0.5) / SHEIGHT),
         ..Default::default()
     };
@@ -221,7 +221,7 @@ async fn main() {
                             }
                         }
                         ui.same_line(0.);
-                        if widgets::Button::new(slow).ui(ui) || is_key_pressed(KeyCode::Z) {
+                        if widgets::Button::new(slow.clone()).ui(ui) || is_key_pressed(KeyCode::Z) {
                             speedup = std::cmp::max(speedup / 10, 1);
                         };
                         ui.same_line(0.);
@@ -229,11 +229,12 @@ async fn main() {
                             speedup = 1;
                         };
                         ui.same_line(0.);
-                        if widgets::Button::new(fast).ui(ui) || is_key_pressed(KeyCode::C) {
+                        if widgets::Button::new(fast.clone()).ui(ui) || is_key_pressed(KeyCode::C) {
                             speedup = std::cmp::min(speedup * 10, 1000);
                         };
                         ui.same_line(0.);
-                        if widgets::Button::new(if paused { play } else { pause }).ui(ui)
+                        if widgets::Button::new(if paused { play.clone() } else { pause.clone() })
+                            .ui(ui)
                             || is_key_pressed(KeyCode::P)
                         {
                             paused = !paused;
@@ -272,7 +273,9 @@ async fn main() {
                             pop.focus = !pop.focus;
                         };
                         ui.same_line(0.);
-                        if widgets::Button::new(restart).ui(ui) || is_key_pressed(KeyCode::R) {
+                        if widgets::Button::new(restart.clone()).ui(ui)
+                            || is_key_pressed(KeyCode::R)
+                        {
                             if human {
                                 world = World::new(None, None, None, (WIDTH, HEIGHT));
                             } else {
