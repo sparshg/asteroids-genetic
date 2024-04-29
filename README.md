@@ -4,7 +4,7 @@ Train your own AI to play asteroids game using neural networks and genetic algor
 
 - ## [Try on Web](https://sparshg.github.io/asteroids-genetic)
 
-- ### [Install on Desktop](https://github.com/sparshg/asteroids-genetic/releases/tag/v0.1.0) (Windows/Mac/Linux)
+- ### [Install on Desktop](https://github.com/sparshg/asteroids-genetic/releases) (Windows/Mac/Linux)
 
 
 ![](assets/demo.png)
