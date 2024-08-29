@@ -10,6 +10,8 @@ macroquad = "0.4.13"
 nalgebra = { version = "0.33.0", features = ["serde-serialize"] }
 serde = { version = "1.0.189", features = ["derive"] }
 serde_json = "1.0.107"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tinyfiledialogs = "3.9.1"
 
 [profile.dev]

@@ -22,12 +22,10 @@ jobs:
       - name: Build the project
         run: cargo build --target wasm32-unknown-unknown --release
 
-      - name: Run wasm-bindgen
-        run: wasm-bindgen --out-dir ./out --target web ./target/wasm32-unknown-unknown/release/asteroids_genetic.wasm
-
       - name: Copy static files
         run: |
-          cp ./target/release/wasm32-unknown-unknown/genetic.wasm ./out/genetic.wasm
+          mkdir out
+          cp ./target/wasm32-unknown-unknown/release/genetic.wasm ./out/genetic.wasm
           cp ./index.html ./out/index.html
 
       - name: Deploy to GitHub Pages

@@ -14,6 +14,7 @@ use macroquad::{
     ui::{hash, root_ui, widgets},
 };
 use population::{AutoSwitch, Population};
+#[cfg(not(target_arch = "wasm32"))]
 use tinyfiledialogs::{open_file_dialog, save_file_dialog};
 use world::World;
 
@@ -185,6 +186,7 @@ async fn main() {
                         // ui.same_line(242.);
                         ui.same_line(ui_width - 329.);
                         if widgets::Button::new("Load Model").ui(ui) {
+                            #[cfg(not(target_arch = "wasm32"))]
                             if let Some(path) = open_file_dialog("Load Model", "model.json", None) {
                                 let brain = NN::import(&path);
                                 size = 1;
@@ -216,6 +218,7 @@ async fn main() {
                         }
                         ui.same_line(0.);
                         if widgets::Button::new("Save Model").ui(ui) {
+                            #[cfg(not(target_arch = "wasm32"))]
                             if let Some(path) = save_file_dialog("Save Model", "model.json") {
                                 pop.worlds[pop.track].export_brain(&path);
                             }
