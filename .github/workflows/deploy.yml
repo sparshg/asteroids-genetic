@@ -1,0 +1,37 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+
+      - name: Build the project
+        run: cargo build --target wasm32-unknown-unknown --release
+
+      - name: Run wasm-bindgen
+        run: wasm-bindgen --out-dir ./out --target web ./target/wasm32-unknown-unknown/release/asteroids_genetic.wasm
+
+      - name: Copy static files
+        run: |
+          cp ./target/release/wasm32-unknown-unknown/genetic.wasm ./out/genetic.wasm
+          cp ./index.html ./out/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
