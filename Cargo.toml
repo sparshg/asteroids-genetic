@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-macroquad = "0.4.4"
-nalgebra = { version = "0.32.3", features = ["serde-serialize"] }
+macroquad = "0.4.13"
+nalgebra = { version = "0.33.0", features = ["serde-serialize"] }
 serde = { version = "1.0.189", features = ["derive"] }
 serde_json = "1.0.107"
 tinyfiledialogs = "3.9.1"

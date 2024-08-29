@@ -187,24 +187,9 @@ impl NN {
             }
         }
         draw_rectangle(width * 0.47, height * 0.47, 10., 10., RED);
-        let params = TextParams {
-            font_size: 40,
-            font_scale: 0.5,
-            ..Default::default()
-        };
-        draw_text_ex(
-            "-ve",
-            width * 0.47 + 20.,
-            height * 0.47 + 10.,
-            params.clone(),
-        );
+        draw_text("-ve", width * 0.47 + 20., height * 0.47 + 10., 20.0, WHITE);
         draw_rectangle(width * 0.47, height * 0.47 + 20., 10., 10., WHITE);
-        draw_text_ex(
-            "+ve",
-            width * 0.47 + 20.,
-            height * 0.47 + 30.,
-            params.clone(),
-        );
+        draw_text("+ve", width * 0.47 + 20., height * 0.47 + 30., 20.0, WHITE);
     }
 
     pub fn export(&self) -> String {
